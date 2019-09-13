@@ -1,0 +1,134 @@
+{block content}
+
+<style>
+	.message {
+		padding: 0.5em;
+		border-radius: 1em;
+		margin: 0.5em;
+		line-height: 1.1em;
+	}
+</style>
+{snippet loginForm}
+<div class="container mt-3">
+
+	{if $ischat == false}
+
+		<div class="container" style="width: 300px;">
+			<div class="card bg-dark text-success border-success mb-3">
+				<div class="card-header border-success text-center">Welcome to ChatCrypt</div>
+				<div class="card-body">
+					{form login}
+						<input class="form-control form-control-sm mb-1 bg-dark border-success text-success" n:name="nickname">
+						<div n:if="$form['nickname']->error" class="text-danger mb-2">{$form['nickname']->error}</div>
+
+						<input class="form-control form-control-sm mb-1 bg-dark border-success text-success" n:name="group">
+						<input class="form-control form-control-sm mb-1 bg-dark border-success text-success" n:name="password">
+						<input class="btn btn-sm btn-success btn-block mt-3" n:name="submit">
+					{/form}
+				</div>
+			</div>
+
+			<div class="card bg-dark text-success border-success">
+				<div class="card-header border-success text-center">How this work ?</div>
+				<div class="card-body">
+					1. Message, Group, Group password and Nickname are crypting in sha256.<br>
+					2. A group password serves as a key for decrypting messages, groups, and nicknames. Who does not know the correct key will not join the chat. Respectively, he creates a platoon under a different key :-)<br>
+					3. All encrypted records from the database older than 20 minutes are deleted.<br>
+					4. The F5 key throws you out of the chat to the basic sign-in screen.
+				</div>
+			</div>
+
+		</div>
+
+	{else}
+
+		<div class="container" style="max-width: 600px;">
+			<div class="card bg-dark text-success border-success mb-3">
+				<div class="card-body p-1">
+					{snippet refreshChat}
+						<div class="row m-0">
+							<div id="scroller" class="bg-dark text-light overflow-auto small col-9 border-success border-right" style="max-height: 200px; min-height: 50px;">
+
+									{foreach $chat as $item}
+									<div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
+										<div class="{if $item['user'] == $nickname}border border-success bg-dark text-success{else}bg-success text-dark{/if} message d-inline-flex text-left">
+											<div class="d-inline-block">
+												<div class="font-weight-bold">
+													{$item['user']}
+												</div>
+												<div>
+													{$item['message']}
+													<div class="text-right small float-right mt-2 ml-1">{$item['message_date']|date:'H:i'}</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									{/foreach}
+
+									<script type="text/javascript">
+										var element = document.getElementById('scroller');
+										element.scrollTop = element.scrollHeight;
+									</script>
+
+							</div>
+							<div class="col-3 small">
+								<div class="font-weight-bold">Users</div>
+								{foreach $users as $item}
+									{foreach $emoji as $em}
+									{var $item = str_replace($em,"<b>".$em."</b>",$item);}
+									{/foreach}
+
+									<div>{$item|noescape}</div>
+								{/foreach}
+							</div>
+						</div>
+					{/snippet}
+				</div>
+			</div>
+			{form chatForm}
+				<input id="messageInput" class="form-control form-control-sm mb-1 bg-dark border-success text-success" n:name="message">
+			{/form}
+
+			<div class="bg-dark text-success small mt-3">
+				{foreach $emoji as $em}
+					<button class="btn btn-outline-secondary text-light p-1" onclick='insertEmoji({$em})'>{$em}</button>
+				{/foreach}
+			</div>
+
+		</div>
+		<script type="text/javascript">
+			document.getElementById("messageInput").focus();
+
+			function insertEmoji(emoji) {
+                var myElement     = document.getElementById("messageInput");
+                var lenght		  = myElement.value.length;
+                var startPosition = myElement.selectionStart;
+                var endPosition   = myElement.selectionEnd;
+                var start 		  = document.getElementById("messageInput").value.substring(0, startPosition);
+                var end      	  = document.getElementById("messageInput").value.substring(endPosition, lenght);
+                document.getElementById("messageInput").value = start + " " + emoji + " " + end;
+            }
+
+		</script>
+
+	{/if}
+
+</div>
+{/snippet}
+
+{snippet refresh}
+	{if $ischat == true}
+		<script type="text/javascript">
+			var myVar = setInterval(myTimer, 5000);
+
+			function myTimer() {
+				$.nette.ajax({
+					type: 'GET',
+					url: {link refresh!, $group, $nickname, $secret_key},
+				});
+			}
+		</script>
+	{/if}
+{/snippet}
+
+
