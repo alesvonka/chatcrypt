@@ -104,9 +104,7 @@
 
 			<div class="bg-dark text-success mt-3">
 				{foreach $emoji as $key => $em}
-					{var $kkey = '[#'.$key.']';}
-					<button class="btn p-0 m-0" style="font-size:18px;" onclick='insertEmoji({$kkey})'><span class='ec {$em}'></span></button>
-
+					<button class="btn p-0 m-0" style="font-size:18px;" onclick='insertEmoji("[#{$key}]")'><span class='ec {$em}'></span></button>
 				{/foreach}
 
 
