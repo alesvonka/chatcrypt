@@ -31,9 +31,9 @@
 			<div class="card bg-dark text-success border-success">
 				<div class="card-header border-success text-center">How this work ?</div>
 				<div class="card-body">
-					1. Message, Group, Group password and Nickname are crypting in sha256.<br>
+					1. Message, Group, Group password and Nickname are crypting.<br>
 					2. A group password serves as a key for decrypting messages, groups, and nicknames. Who does not know the correct key will not join the chat. Respectively, he creates a platoon under a different key :-)<br>
-					3. All encrypted records from the database older than 20 minutes are deleted.<br>
+					3. All encrypted records from the database older than 1 hour are deleted.<br>
 					4. The F5 key throws you out of the chat to the basic sign-in screen.
 				</div>
 			</div>
