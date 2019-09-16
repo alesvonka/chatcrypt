@@ -50,26 +50,33 @@
 						<div class="row m-0">
 							<div id="scroller" class="bg-dark text-light overflow-auto col-8 border-success border-right" style="max-height: 200px; min-height: 50px;">
 
-									{foreach $chat as $item}
-									<div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
-										<div class="{if $item['user'] == $nickname}border border-success bg-dark text-success{else}bg-success text-dark{/if} message d-inline-flex text-left">
-											<div class="d-inline-block">
-												<div class="font-weight-bold small mb-1">
-													{$item['user']}
-												</div>
-												<div>
-													<span style="font-size:18px;">{$item['message']|noescape}</span>
-													<div class="text-right small float-right mt-2 ml-1">{$item['message_date']|date:'H:i'}</div>
-												</div>
-											</div>
-										</div>
-									</div>
-									{/foreach}
+                                {foreach $chat as $key => $item}
+                                    <div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
+                                        <div class="{if $item['user'] == $nickname}border border-success bg-dark text-success{else}bg-success text-dark{/if} message d-inline-flex text-left">
+                                            <div class="d-inline-block">
+                                                <div class="font-weight-bold small mb-1">
+                                                    {$item['user']}
+                                                </div>
+                                                <div>
+                                                    <span style="font-size:18px;">{$item['message']|noescape}</span>
+                                                    <div class="text-right small float-right mt-2 ml-1">{$item['message_date']|date:'H:i'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {/foreach}
 
-									<script type="text/javascript">
-										var element = document.getElementById('scroller');
-										element.scrollTop = element.scrollHeight;
-									</script>
+                                <script type="text/javascript">
+                                    var element = document.getElementById('scroller');
+                                    element.scrollTop = element.scrollHeight;
+                                </script>
+
+                                {* Message Song*}
+                                {*
+                                <audio id="player" autoplay>
+                                    <source src="{$basePath}/message.mp3" type="audio/mp3">
+                                </audio>
+                                *}
 
 							</div>
 							<div class="col-4 small">

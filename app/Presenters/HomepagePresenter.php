@@ -19,6 +19,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     public  $group;
     public $ischat  = false;
     public $chat    = [];
+    public $lastItem = 0;
 
     /** @var Emoji @inject */
     public $emoji;
@@ -26,7 +27,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     public $users= [];
     public $ip;
 
-    public function __construct(Nette\Database\Context $database)
+    public function __construct(Nette\Database\Context $database, Nette\Http\Session $session)
     {
         $this->database = $database;
         $this->database->table('chat')->where('message_date < SUBDATE(NOW(), INTERVAL 1 HOUR)')->delete();
@@ -36,6 +37,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     {
         parent::startup();
         $this->ip = $this->getHttpRequest()->getRemoteAddress();
+
     }
 
     public function handleRefresh($group, $nickname, $secret_key)
@@ -73,8 +75,8 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
 
     private function setChat()
     {
+        $items = $this->database->table('chat')->where('group',$this->encrypt_decrypt('encrypt',$this->group))->order('message_date ASC');
 
-        $items = $this->database->table('chat')->where('group',$this->encrypt_decrypt('encrypt',$this->group))->order('message_date ASC')->limit(20);
         foreach ($items AS $key=> $item)
         {
             $this->chat[$key]['user']           = $this->encrypt_decrypt('decrypt',$item->user);
@@ -83,6 +85,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
             $this->chat[$key]['message_date']   = $item->message_date;
 
             $this->users[$item->ip.$item->user] = $this->chat[$key]['user'];
+            $this->lastItem                     = $key;
         }
 
        $this->ischat = true;
@@ -189,6 +192,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         $this->template->group      = $this->group;
         $this->template->secret_key = $this->secret_key;
         $this->template->chat       = $this->chat;
+        $this->template->lastItem   = $this->lastItem;
         $this->template->ischat     = $this->ischat;
         $this->template->users      = $this->users;
 
