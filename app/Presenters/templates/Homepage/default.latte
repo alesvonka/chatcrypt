@@ -43,11 +43,12 @@
 	{else}
 
 		<div class="container" style="max-width: 600px;">
+
 			<div class="card bg-dark text-success border-success mb-3">
 				<div class="card-body p-1">
 					{snippet refreshChat}
 						<div class="row m-0">
-							<div id="scroller" class="bg-dark text-light overflow-auto small col-9 border-success border-right" style="max-height: 200px; min-height: 50px;">
+							<div id="scroller" class="bg-dark text-light overflow-auto small col-8 border-success border-right" style="max-height: 200px; min-height: 50px;">
 
 									{foreach $chat as $item}
 									<div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
@@ -57,7 +58,7 @@
 													{$item['user']}
 												</div>
 												<div>
-													{$item['message']}
+													{$item['message']|noescape}
 													<div class="text-right small float-right mt-2 ml-1">{$item['message_date']|date:'H:i'}</div>
 												</div>
 											</div>
@@ -71,22 +72,34 @@
 									</script>
 
 							</div>
-							<div class="col-3 small">
-								<div class="font-weight-bold">Users</div>
+							<div class="col-4 small">
+								<div class="border-success border-bottom"><span>Refresh (<span id="refreshTime">10</span>)</span></div>
+								<div class="small">Users:</div>
 								{foreach $users as $item}
-									{foreach $emoji as $em}
-									{var $item = str_replace($em,"<b>".$em."</b>",$item);}
-									{/foreach}
+									<div>
+										{if $item == $nickname}
+											<b>{$item|noescape}</b>
+										{else}
+											{$item|noescape}
+										{/if}
 
-									<div>{$item|noescape}</div>
+									</div>
 								{/foreach}
 							</div>
+
 						</div>
 					{/snippet}
 				</div>
 			</div>
 			{form chatForm}
-				<input id="messageInput" class="form-control form-control-sm mb-1 bg-dark border-success text-success" n:name="message">
+				<div class="form-row">
+					<div class="col-sm-10">
+						<input id="messageInput" class="form-control form-control-sm mb-1 bg-dark border-success text-success mr-3 " n:name="message">
+					</div>
+					<div class="col-sm-auto">
+						<input n:name="submit">
+					</div>
+				</div>
 			{/form}
 
 			<div class="bg-dark text-success small mt-3">
@@ -94,7 +107,6 @@
 					<button class="btn btn-outline-secondary text-light p-1" onclick='insertEmoji({$em})'>{$em}</button>
 				{/foreach}
 			</div>
-
 		</div>
 		<script type="text/javascript">
 			document.getElementById("messageInput").focus();
@@ -119,7 +131,22 @@
 {snippet refresh}
 	{if $ischat == true}
 		<script type="text/javascript">
-			var myVar = setInterval(myTimer, 5000);
+
+			// refresh
+            var n = 9;
+            setInterval(function () {
+
+                if(n <= 0)
+				{
+                    n = 9;
+				}else{
+                    document.getElementById("refreshTime").innerText = n;
+                    n = n - 1;
+				}
+
+            },1000);
+
+			var myVar = setInterval(myTimer, 10000);
 
 			function myTimer() {
 				$.nette.ajax({
@@ -127,6 +154,7 @@
 					url: {link refresh!, $group, $nickname, $secret_key},
 				});
 			}
+
 		</script>
 	{/if}
 {/snippet}

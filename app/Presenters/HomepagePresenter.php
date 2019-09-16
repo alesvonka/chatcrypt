@@ -70,7 +70,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     private function setChat()
     {
 
-        $items = $this->database->table('chat')->where('group',$this->encrypt_decrypt('encrypt',$this->group))->order('message_date ASC')->limit(50);
+        $items = $this->database->table('chat')->where('group',$this->encrypt_decrypt('encrypt',$this->group))->order('message_date ASC')->limit(20);
         foreach ($items AS $key=> $item)
         {
             $this->chat[$key]['user']           = $this->encrypt_decrypt('decrypt',$item->user);
@@ -142,8 +142,8 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
             ->setHtmlAttribute('placeholder','Message')
             ->setHtmlAttribute('autofocus','autofocus')
             ->setHtmlAttribute('autocomplete','off');
-        //$form->addSubmit('submit','Send')
-        //    ->setHtmlAttribute('class','btn btn-sm btn-dark text-success');
+        $form->addSubmit('submit','Send')
+            ->setHtmlAttribute('class','btn btn-sm btn-dark text-success');
         $form->onSuccess[] = [$this,'chatFormSuccess'];
         return $form;
     }
