@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presenters;
 
+use App\Model\Emoji;
 use Nette;
 use Nette\Application\UI\Form;
 
@@ -16,8 +17,11 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     public  $secret_key;
     public  $nickname;
     public  $group;
-    public $ischat = false;
-    public $chat = [];
+    public $ischat  = false;
+    public $chat    = [];
+
+    /** @var Emoji @inject */
+    public $emoji;
 
     public $users= [];
     public $ip;
@@ -157,6 +161,13 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
 
         if(!empty($values['message']))
         {
+
+            //replace emoji
+            foreach ($this->emoji->emoji() as $key =>$em)
+            {
+                $values['message'] = str_replace('[#'.$key.']','<span class="ec '.$em.'"></span>',$values['message']);
+            }
+
             $this->database->table('chat')->insert([
                 'user'      => $this->encrypt_decrypt('encrypt',$values['nickname']),
                 'ip'        => $this->encrypt_decrypt('encrypt',$this->ip.$values['nickname']),
@@ -172,7 +183,6 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         return $form;
     }
 
-
     public function renderDefault()
     {
         $this->template->nickname   = $this->nickname;
@@ -182,14 +192,6 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         $this->template->ischat     = $this->ischat;
         $this->template->users      = $this->users;
 
-        $this->template->emoji      =[
-            ":-)",
-            ":-(",
-            ":-|",
-            ":-O",
-            ":-*",
-            "X-(",
-            ";-)",
-        ];
+        $this->template->emoji      = $this->emoji->emoji();
     }
 }

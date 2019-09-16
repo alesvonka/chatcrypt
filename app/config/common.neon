@@ -13,4 +13,5 @@ session:
 
 
 services:
-	router: App\Router\RouterFactory::createRouter
+      - App\Model\Emoji
+      router: App\Router\RouterFactory::createRouter

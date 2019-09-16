@@ -48,17 +48,17 @@
 				<div class="card-body p-1">
 					{snippet refreshChat}
 						<div class="row m-0">
-							<div id="scroller" class="bg-dark text-light overflow-auto small col-8 border-success border-right" style="max-height: 200px; min-height: 50px;">
+							<div id="scroller" class="bg-dark text-light overflow-auto col-8 border-success border-right" style="max-height: 200px; min-height: 50px;">
 
 									{foreach $chat as $item}
 									<div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
 										<div class="{if $item['user'] == $nickname}border border-success bg-dark text-success{else}bg-success text-dark{/if} message d-inline-flex text-left">
 											<div class="d-inline-block">
-												<div class="font-weight-bold">
+												<div class="font-weight-bold small mb-1">
 													{$item['user']}
 												</div>
 												<div>
-													{$item['message']|noescape}
+													<span style="font-size:18px;">{$item['message']|noescape}</span>
 													<div class="text-right small float-right mt-2 ml-1">{$item['message_date']|date:'H:i'}</div>
 												</div>
 											</div>
@@ -102,10 +102,14 @@
 				</div>
 			{/form}
 
-			<div class="bg-dark text-success small mt-3">
-				{foreach $emoji as $em}
-					<button class="btn btn-outline-secondary text-light p-1" onclick='insertEmoji({$em})'>{$em}</button>
+			<div class="bg-dark text-success mt-3">
+				{foreach $emoji as $key => $em}
+					{var $kkey = '[#'.$key.']';}
+					<button class="btn p-0 m-0" style="font-size:18px;" onclick='insertEmoji({$kkey})'><span class='ec {$em}'></span></button>
+
 				{/foreach}
+
+
 			</div>
 		</div>
 		<script type="text/javascript">
@@ -118,7 +122,8 @@
                 var endPosition   = myElement.selectionEnd;
                 var start 		  = document.getElementById("messageInput").value.substring(0, startPosition);
                 var end      	  = document.getElementById("messageInput").value.substring(endPosition, lenght);
-                document.getElementById("messageInput").value = start + " " + emoji + " " + end;
+                document.getElementById("messageInput").value = start + emoji + end;
+                document.getElementById("messageInput").focus();
             }
 
 		</script>
