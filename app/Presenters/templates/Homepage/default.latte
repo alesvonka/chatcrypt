@@ -7,6 +7,12 @@
 		margin: 0.5em;
 		line-height: 1.1em;
 	}
+
+	.nano { min-height: 50px; height: 200px;}
+	.nano .nano-content { padding: 10px;}
+	.nano .nano-pane   { background: #333; }
+	.nano .nano-slider { background: #555; }
+
 </style>
 {snippet loginForm}
 <div class="container mt-3">
@@ -48,7 +54,8 @@
 				<div class="card-body p-1">
 					{snippet refreshChat}
 						<div class="row m-0">
-							<div id="scroller" class="bg-dark text-light overflow-auto col-8 border-success border-right" style="max-height: 200px; min-height: 50px;">
+							<div id="scroller" class="bg-dark col-8 nano">
+								<div class="nano-content">
 
                                 {foreach $chat as $key => $item}
                                     <div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
@@ -66,9 +73,14 @@
                                     </div>
                                 {/foreach}
 
+								</div>
                                 <script type="text/javascript">
+                                    $(".nano").nanoScroller({ scroll: 'bottom' });
+                                    $(".nano").nanoScroller({ alwaysVisible: true });
+									{*
                                     var element = document.getElementById('scroller');
                                     element.scrollTop = element.scrollHeight;
+                                    *}
                                 </script>
 
                                 {* Message Song*}
@@ -87,13 +99,15 @@
                                     {/snippet}
                                     <span>Refresh (<span id="refreshTime">10</span>)</span>
                                 </div>
-                                <div class="overflow-auto" style="max-height: 160px;">
-                                    <div class="d-block text-left text-secondary"><span class="ec ec-radioactive text-secondary"></span> {$nickname}</div>
-                                    {foreach $users as $item}
-                                    {if $item != $nickname}
-                                        <div class="d-block text-left text-success"><span class="ec ec-radioactive text-success"></span> {$item}</div>
-                                    {/if}
-                                    {/foreach}
+                                <div class="nano" style="max-height: 160px;">
+									<div class="nano-content">
+										<div class="d-block text-left text-secondary"><span class="ec ec-radioactive text-secondary"></span> {$nickname}</div>
+											{foreach $users as $item}
+											{if $item != $nickname}
+												<div class="d-block text-left text-success"><span class="ec ec-radioactive text-success"></span> {$item}</div>
+											{/if}
+											{/foreach}
+										</div>
                                 </div>
 							</div>
 
