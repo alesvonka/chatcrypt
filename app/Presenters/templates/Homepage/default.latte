@@ -52,7 +52,7 @@
 
                                 {foreach $chat as $key => $item}
                                     <div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
-                                        <div class="{if $item['user'] == $nickname}border border-success bg-dark text-success{else}bg-success text-dark{/if} message d-inline-flex text-left">
+                                        <div class="{if $item['user'] == $nickname}bg-secondary text-white{else}bg-success text-dark{/if} message d-inline-flex text-left">
                                             <div class="d-inline-block">
                                                 <div class="font-weight-bold small mb-1">
                                                     {$item['user']}
@@ -72,26 +72,28 @@
                                 </script>
 
                                 {* Message Song*}
-                                {*
+                                {if $last_message == true && $setOnOffNewMessageVoice == true}
                                 <audio id="player" autoplay>
                                     <source src="{$basePath}/message.mp3" type="audio/mp3">
                                 </audio>
-                                *}
+                                {/if}
+
 
 							</div>
 							<div class="col-4 small">
-								<div class="border-success border-bottom"><span>Refresh (<span id="refreshTime">10</span>)</span></div>
-								<div class="small">Users:</div>
+								<div class="border-success border-bottom form-inline mb-1">
+                                    {snippet setOnOffNewMessageVoice}
+                                    <a n:href="setOnOffNewMessageVoice!" class="btn btn-sm ec{if $setOnOffNewMessageVoice == true} ec-loud-sound {else} ec-mute {/if} ajax" title="On/Off new message voice"></a>
+                                    {/snippet}
+                                    <span>Refresh (<span id="refreshTime">10</span>)</span>
+                                </div>
+                                <div class="overflow-auto" style="max-height: 160px;">
 								{foreach $users as $item}
-									<div>
-										{if $item == $nickname}
-											<b>{$item|noescape}</b>
-										{else}
-											{$item|noescape}
-										{/if}
-
-									</div>
+                                        <div class="d-block text-left {if $item == $nickname}text-secondary{else}text-success{/if}">
+                                            <span class="ec ec-radioactive {if $item == $nickname}text-secondary{else}text-success{/if}"></span> {$item}
+                                        </div>
 								{/foreach}
+                                </div>
 							</div>
 
 						</div>

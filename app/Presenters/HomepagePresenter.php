@@ -19,7 +19,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     public  $group;
     public $ischat  = false;
     public $chat    = [];
-    public $lastItem = 0;
+    public $last_message = false;
 
     /** @var Emoji @inject */
     public $emoji;
@@ -27,10 +27,19 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     public $users= [];
     public $ip;
 
+    /** @var Nette\Http\SessionSection */
+    private $sessionSection;
+
     public function __construct(Nette\Database\Context $database, Nette\Http\Session $session)
     {
         $this->database = $database;
         $this->database->table('chat')->where('message_date < SUBDATE(NOW(), INTERVAL 1 HOUR)')->delete();
+        $this->sessionSection   = $session->getSection('cryptchat');
+
+        if(!$this->sessionSection->onOff)
+        {
+            $this->sessionSection->onOff = true;
+        }
     }
 
     public function startup()
@@ -38,6 +47,12 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         parent::startup();
         $this->ip = $this->getHttpRequest()->getRemoteAddress();
 
+    }
+
+    public function handleSetOnOffNewMessageVoice()
+    {
+        $this->redrawControl('setOnOffNewMessageVoice');
+        $this->sessionSection->onOff = ($this->sessionSection->onOff == true) ? false : true;
     }
 
     public function handleRefresh($group, $nickname, $secret_key)
@@ -77,6 +92,9 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     {
         $items = $this->database->table('chat')->where('group',$this->encrypt_decrypt('encrypt',$this->group))->order('message_date ASC');
 
+        $last_id   = null;
+        $last_user = null;
+
         foreach ($items AS $key=> $item)
         {
             $this->chat[$key]['user']           = $this->encrypt_decrypt('decrypt',$item->user);
@@ -85,10 +103,25 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
             $this->chat[$key]['message_date']   = $item->message_date;
 
             $this->users[$item->ip.$item->user] = $this->chat[$key]['user'];
-            $this->lastItem                     = $key;
+
+            $last_id   = $key;
+            $last_user = $this->chat[$key]['user'];
         }
 
-       $this->ischat = true;
+        //play / noplay new message
+        if($last_user != $this->nickname && $this->sessionSection->id != $last_id)
+        {
+            $this->sessionSection->id   = $last_id;
+            $this->last_message         = true;
+
+        }elseif($last_user == $this->nickname)
+        {
+            $this->sessionSection->id   = $last_id;
+        }else{
+            $this->last_message         = false;
+        }
+
+        $this->ischat = true;
     }
 
     protected function createComponentLogin(string $name): Form
@@ -188,14 +221,14 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
 
     public function renderDefault()
     {
-        $this->template->nickname   = $this->nickname;
-        $this->template->group      = $this->group;
-        $this->template->secret_key = $this->secret_key;
-        $this->template->chat       = $this->chat;
-        $this->template->lastItem   = $this->lastItem;
-        $this->template->ischat     = $this->ischat;
-        $this->template->users      = $this->users;
-
-        $this->template->emoji      = $this->emoji->emoji();
+        $this->template->nickname                   = $this->nickname;
+        $this->template->group                      = $this->group;
+        $this->template->secret_key                 = $this->secret_key;
+        $this->template->chat                       = $this->chat;
+        $this->template->last_message               = $this->last_message;
+        $this->template->ischat                     = $this->ischat;
+        $this->template->users                      = $this->users;
+        $this->template->emoji                      = $this->emoji->emoji();
+        $this->template->setOnOffNewMessageVoice    = $this->sessionSection->onOff;
     }
 }
