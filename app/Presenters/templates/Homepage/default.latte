@@ -48,7 +48,7 @@
 
 	{else}
 
-		<div class="container" style="max-width: 600px;">
+		<div class="container" style="max-width: 600px; min-width: 500px;">
 
 			<div class="card bg-dark text-success border-success mb-3">
 				<div class="card-body p-1">
@@ -58,7 +58,7 @@
 								<div class="nano-content">
 
                                 {foreach $chat as $key => $item}
-                                    <div class="{if $item['user'] == $nickname}text-right ml-5{else}text-left mr-5{/if}">
+                                    <div class="{if $item['user'] == $nickname}text-right mr-2 ml-5{else}text-left mr-5{/if}">
                                         <div class="{if $item['user'] == $nickname}bg-secondary text-white{else}bg-success text-dark{/if} message d-inline-flex text-left">
                                             <div class="d-inline-block">
                                                 <div class="font-weight-bold small mb-1">
@@ -118,10 +118,11 @@
 			{form chatForm}
 				<div class="form-row">
 					<div class="col-sm-10">
-						<input id="messageInput" class="form-control form-control-sm mb-1 bg-dark border-success text-success mr-3 " n:name="message">
+						{*<input id="messageInput" class="form-control form-control-sm mb-1 bg-dark border-success text-success mr-3 " n:name="message">*}
+                        {input message}
 					</div>
 					<div class="col-sm-auto">
-						<input n:name="submit">
+                        {input submit}
 					</div>
 				</div>
 			{/form}

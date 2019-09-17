@@ -178,7 +178,8 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         $form->addHidden('group')->setDefaultValue($this->group);
         $form->addHidden('password')->setDefaultValue($this->secret_key);
         $form->addText('message',null)
-            ->setHtmlAttribute('class','form-control form-control-sm mt-1 mb-1')
+            ->setHtmlAttribute('id','messageInput')
+            ->setHtmlAttribute('class','form-control form-control-sm  mt-1 mb-1 bg-dark border-success text-success mr-3')
             ->setHtmlAttribute('placeholder','Message')
             ->setHtmlAttribute('autofocus','autofocus')
             ->setHtmlAttribute('autocomplete','off');
