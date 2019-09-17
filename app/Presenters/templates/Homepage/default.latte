@@ -88,11 +88,12 @@
                                     <span>Refresh (<span id="refreshTime">10</span>)</span>
                                 </div>
                                 <div class="overflow-auto" style="max-height: 160px;">
-								{foreach $users as $item}
-                                        <div class="d-block text-left {if $item == $nickname}text-secondary{else}text-success{/if}">
-                                            <span class="ec ec-radioactive {if $item == $nickname}text-secondary{else}text-success{/if}"></span> {$item}
-                                        </div>
-								{/foreach}
+                                    <div class="d-block text-left text-secondary"><span class="ec ec-radioactive text-secondary"></span> {$nickname}</div>
+                                    {foreach $users as $item}
+                                    {if $item != $nickname}
+                                        <div class="d-block text-left text-success"><span class="ec ec-radioactive text-success"></span> {$item}</div>
+                                    {/if}
+                                    {/foreach}
                                 </div>
 							</div>
 
