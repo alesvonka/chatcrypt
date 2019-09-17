@@ -34,15 +34,26 @@
 				</div>
 			</div>
 
-			<div class="card bg-dark text-success border-success">
-				<div class="card-header border-success text-center">How this work ?</div>
-				<div class="card-body">
-					1. Message, Group, Group password and Nickname are crypting.<br>
-					2. A group password serves as a key for decrypting messages, groups, and nicknames. Who does not know the correct key will not join the chat. Respectively, he creates a platoon under a different key :-)<br>
-					3. All encrypted records from the database older than 1 hour are deleted.<br>
-					4. The F5 key throws you out of the chat to the basic sign-in screen.
-				</div>
-			</div>
+            <button class="btn btn-sm btn-secondary ec-grey-question p-1" data-toggle="modal" data-target="#help"> Help</button>
+
+            <!-- Modal -->
+            <div class="modal fade " id="help" tabindex="-1" role="dialog" aria-labelledby="help" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content bg-dark text-success border-success">
+                        <div class="modal-header border-success">
+                            <h5 class="modal-title" id="help">How this work ?</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true" class="text-success">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            1. All activity is crypting.<br>
+                            2. All encrypted records from the database older than 1 hour are deleted.<br>
+                            3. The F5 key throws you out of the chat to the basic sign-in screen.
+                        </div>
+                    </div>
+                </div>
+            </div>
 
 		</div>
 
@@ -59,7 +70,7 @@
 
                                 {foreach $chat as $key => $item}
                                     <div class="{if $item['user'] == $nickname}text-right mr-2 ml-5{else}text-left mr-5{/if}">
-                                        <div class="{if $item['user'] == $nickname}bg-secondary text-white{else}bg-success text-dark{/if} message d-inline-flex text-left">
+                                        <div class="{if $item['user'] == $nickname}bg-secondary text-white{else}bg-success text-dark{/if} message d-inline-flex text-left mx-0">
                                             <div class="d-inline-block">
                                                 <div class="font-weight-bold small mb-1">
                                                     {$item['user']}
@@ -97,7 +108,7 @@
                                     {snippet setOnOffNewMessageVoice}
                                     <a n:href="setOnOffNewMessageVoice!" class="btn btn-sm ec{if $setOnOffNewMessageVoice == true} ec-loud-sound {else} ec-mute {/if} ajax" title="On/Off new message voice"></a>
                                     {/snippet}
-                                    <span>Refresh (<span id="refreshTime">10</span>)</span>
+                                    <span class="pl-2">Refresh (<span id="refreshTime">10</span>)</span>
                                 </div>
                                 <div class="nano" style="max-height: 160px;">
 									<div class="nano-content">
@@ -127,13 +138,14 @@
 				</div>
 			{/form}
 
-			<div class="bg-dark text-success mt-3">
+            <div class="nano bg-dark mt-3 border border-secondary rounded" style="max-height: 100px;">
+			<div class="nano-content">
 				{foreach $emoji as $key => $em}
 					<button class="btn p-0 m-0" style="font-size:18px;" onclick='insertEmoji("[#{$key}]")'><span class='ec {$em}'></span></button>
 				{/foreach}
-
-
 			</div>
+            </div>
+
 		</div>
 		<script type="text/javascript">
 			document.getElementById("messageInput").focus();

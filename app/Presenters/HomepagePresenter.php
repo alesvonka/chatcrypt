@@ -184,7 +184,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
             ->setHtmlAttribute('autofocus','autofocus')
             ->setHtmlAttribute('autocomplete','off');
         $form->addSubmit('submit','Send')
-            ->setHtmlAttribute('class','btn btn-sm btn-dark text-success');
+            ->setHtmlAttribute('class','btn btn-sm btn-dark text-success mt-1');
         $form->onSuccess[] = [$this,'chatFormSuccess'];
         return $form;
     }
