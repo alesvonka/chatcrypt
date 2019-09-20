@@ -75,6 +75,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
 
     public function handleSetOnOffNewMessageVoice()
     {
+        $this->redrawControl('snippetArea');
         $this->redrawControl('setOnOffNewMessageVoice');
         $this->sessionSection->onOff = ($this->sessionSection->onOff == true) ? false : true;
     }
@@ -94,6 +95,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         $this->secret_key   = $secret_key;
 
         $this->setChat();
+        $this->redrawControl('snippetArea');
         $this->redrawControl('refreshChat');
     }
 
@@ -196,6 +198,8 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
             $isDuplicateUser += ($this->nickname == $nickname)? 1:0;
         }
 
+        $this->redrawControl('snippetArea');
+
         if($isDuplicateUser > 1){
             $this['login']['nickname']->addError('Your nickname is exist!');
             $this->redrawControl('flashes');
@@ -253,6 +257,7 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         $this['chatForm']['message']->value = '';
         $this->ischat = true;
         $this->setChat();
+        $this->redrawControl('snippetArea');
         $this->redrawControl('loginForm');
         return $form;
     }
