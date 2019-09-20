@@ -19,5 +19,12 @@ CREATE TABLE `chat` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `chat_write`;
+CREATE TABLE `chat_write` (
+                            `chat_user` varchar(100) NOT NULL,
+                            PRIMARY KEY (`chat_user`),
+                            UNIQUE KEY `chat_user` (`chat_user`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 -- 2019-09-13 09:05:01

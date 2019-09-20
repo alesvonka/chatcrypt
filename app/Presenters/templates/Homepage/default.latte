@@ -56,7 +56,7 @@
 								<li> Messages older than an hour are automatically deleted from the database. </li>
 								<li> No cookies or sessions are stored in the web browser. </li>
 								<li> The F5 key will log you out of the chat. </li>
-								<li> Check incoming messages every 10 seconds. When a new message arrives, it is indicated by a sound. You can turn off the sound by clicking the speaker icon. </li>
+								<li> When a new message arrives, it is indicated by a sound. You can turn off the sound by clicking the speaker icon. </li>
 							</ul>
 
 							[cs]<br>
@@ -67,7 +67,7 @@
 								<li> Zprávy starší hodinu se automaticky mažou z databáze.</li>
 								<li> Do webového prohlížeče se neukládají žádné cookies ani session.</li>
 								<li> Klávesa F5 tě odhlásí z chatu.</li>
-								<li> Kontrola příchozích zpráv je co 10 vteřin. Pokud příjde nová zpráva je indikována zvukem. Zvuk lze vypnout kliknutím na ikonku reproduktoru.</li>
+								<li> Pokud příjde nová zpráva je indikována zvukem. Zvuk lze vypnout kliknutím na ikonku reproduktoru.</li>
 							</ul>
 
                         </div>
@@ -128,14 +128,18 @@
                                     {snippet setOnOffNewMessageVoice}
                                     <a n:href="setOnOffNewMessageVoice!" class="btn btn-sm ec{if $setOnOffNewMessageVoice == true} ec-loud-sound {else} ec-mute {/if} ajax" title="On/Off new message voice"></a>
                                     {/snippet}
-                                    <span class="pl-2">Refresh (<span id="refreshTime">10</span>)</span>
+									{*
+                                    <span class="pl-2">Refresh (<span id="refreshTime">5</span>)</span>
+                                    *}
                                 </div>
                                 <div class="nano" style="max-height: 160px;">
 									<div class="nano-content">
-										<div class="d-block text-left text-secondary"><span class="ec ec-radioactive text-secondary"></span> {$nickname}</div>
-											{foreach $users as $item}
+										<div class="d-block text-left text-light"><span class="ec ec-radioactive text-light"></span> {$nickname}</div>
+											{foreach $users as $key => $item}
 											{if $item != $nickname}
-												<div class="d-block text-left text-success"><span class="ec ec-radioactive text-success"></span> {$item}</div>
+												<div class="d-block text-left text-success"><span class="ec ec-radioactive text-success"></span>
+													{$item}{ifset $writingUsers[$key]} - is writing...{/ifset}
+												</div>
 											{/if}
 											{/foreach}
 										</div>
@@ -193,20 +197,22 @@
 		<script type="text/javascript">
 
 			// refresh
-            var n = 9;
+			/*
+            var n = 4;
             setInterval(function () {
 
                 if(n <= 0)
 				{
-                    n = 9;
+                    n = 4;
 				}else{
                     document.getElementById("refreshTime").innerText = n;
                     n = n - 1;
 				}
 
             },1000);
+			*/
 
-			var myVar = setInterval(myTimer, 10000);
+			var myVar = setInterval(myTimer, 5000);
 
 			function myTimer() {
 				$.nette.ajax({
@@ -214,6 +220,24 @@
 					url: {link refresh!, $group, $nickname, $secret_key},
 				});
 			}
+
+            //writingNow
+            var zprava = document.getElementById("messageInput").value;
+            setInterval(function () {
+
+                var novaZprava = document.getElementById("messageInput").value;
+
+                if(novaZprava != "" && novaZprava != zprava)
+                {
+                    zprava = novaZprava;
+
+                    $.nette.ajax({
+                        type: 'GET',
+                        url: {link writingNow!, $group, $nickname, $secret_key},
+                    });
+                }
+
+            }, 2000);
 
 		</script>
 	{/if}

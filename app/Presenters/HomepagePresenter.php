@@ -42,6 +42,30 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         }
     }
 
+    private function insertWritingUser($nickname)
+    {
+        try {
+
+            $ip         = $this->encrypt_decrypt('encrypt', $this->ip.$nickname);
+            $nickname   = $this->encrypt_decrypt('encrypt', $nickname);
+            $chat_user  = $ip.$nickname;
+
+            $this->database->table('chat_write')->insert([
+                'chat_user' => $chat_user,
+            ]);
+        }catch (Nette\Database\UniqueConstraintViolationException $e){}
+    }
+
+    private function writingUsersArray()
+    {
+        return $this->database->table('chat_write')->fetchPairs('chat_user','chat_user');
+    }
+
+    private function deleteWritingUser()
+    {
+        $this->database->query('TRUNCATE chat_write');
+    }
+
     public function startup()
     {
         parent::startup();
@@ -53,6 +77,14 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
     {
         $this->redrawControl('setOnOffNewMessageVoice');
         $this->sessionSection->onOff = ($this->sessionSection->onOff == true) ? false : true;
+    }
+
+    public function handlewritingNow($group, $nickname, $secret_key)
+    {
+        $this->nickname     = $nickname;
+        $this->group        = $group;
+        $this->secret_key   = $secret_key;
+        $this->insertWritingUser($nickname);
     }
 
     public function handleRefresh($group, $nickname, $secret_key)
@@ -108,6 +140,8 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
             $last_user = $this->chat[$key]['user'];
         }
 
+        asort($this->users);
+
         //play / noplay new message
         if($last_user != $this->nickname && $this->sessionSection->id != $last_id)
         {
@@ -120,6 +154,9 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         }else{
             $this->last_message         = false;
         }
+
+        $this->template->writingUsers = $this->writingUsersArray();
+        $this->deleteWritingUser();
 
         $this->ischat = true;
     }
