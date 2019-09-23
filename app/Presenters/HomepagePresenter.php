@@ -220,12 +220,12 @@ final class HomepagePresenter extends Nette\Application\UI\Presenter
         $form->addHidden('password')->setDefaultValue($this->secret_key);
         $form->addText('message',null)
             ->setHtmlAttribute('id','messageInput')
-            ->setHtmlAttribute('class','form-control form-control-sm  mt-1 mb-1 bg-dark border-success text-success mr-3')
+            ->setHtmlAttribute('class','form-control bg-dark border-success text-success mr-3')
             ->setHtmlAttribute('placeholder','Message')
             ->setHtmlAttribute('autofocus','autofocus')
             ->setHtmlAttribute('autocomplete','off');
         $form->addSubmit('submit','Send')
-            ->setHtmlAttribute('class','btn btn-sm btn-dark text-success mt-1');
+            ->setHtmlAttribute('class','btn btn-dark text-success mb-2');
         $form->onSuccess[] = [$this,'chatFormSuccess'];
         return $form;
     }
