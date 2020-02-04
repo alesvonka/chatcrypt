@@ -17,7 +17,7 @@ class Engine
 {
 	use Strict;
 
-	public const VERSION = '2.5.1';
+	public const VERSION = '2.6.1';
 
 	/** Content types */
 	public const
@@ -32,13 +32,13 @@ class Engine
 	/** @var callable[] */
 	public $onCompile = [];
 
-	/** @var Parser */
+	/** @var Parser|null */
 	private $parser;
 
-	/** @var Compiler */
+	/** @var Compiler|null */
 	private $compiler;
 
-	/** @var ILoader */
+	/** @var ILoader|null */
 	private $loader;
 
 	/** @var Runtime\FilterExecutor */
@@ -50,7 +50,7 @@ class Engine
 	/** @var string */
 	private $contentType = self::CONTENT_HTML;
 
-	/** @var string */
+	/** @var string|null */
 	private $tempDirectory;
 
 	/** @var bool */
@@ -126,11 +126,11 @@ class Engine
 			throw $e->setSource($source, $line, $name);
 		}
 
-		if (!preg_match('#\n|\?#', $name)) {
-			$code = "<?php\n// source: $name\n?>" . $code;
-		}
 		if ($this->strictTypes) {
 			$code = "<?php\ndeclare(strict_types=1);\n?>" . $code;
+		}
+		if (!preg_match('#\n|\?#', $name)) {
+			$code = "<?php\n// source: $name\n?>" . $code;
 		}
 		$code = PhpHelpers::reformatCode($code);
 		return $code;
@@ -158,7 +158,7 @@ class Engine
 	{
 		if (!$this->tempDirectory) {
 			$code = $this->compile($name);
-			if (@eval('?>' . $code) === false) { // @ is escalated to exception
+			if (@eval(substr($code, 5)) === false) { // @ is escalated to exception, substr removes <?php
 				throw (new CompileException('Error in template: ' . error_get_last()['message']))
 					->setSource($code, error_get_last()['line'], "$name (compiled)");
 			}
@@ -211,7 +211,7 @@ class Engine
 	public function getCacheFile(string $name): string
 	{
 		$hash = substr($this->getTemplateClass($name), 8);
-		$base = preg_match('#([/\\\\][\w@.-]{3,35}){1,3}\z#', $name, $m)
+		$base = preg_match('#([/\\\\][\w@.-]{3,35}){1,3}$#D', $name, $m)
 			? preg_replace('#[^\w@.-]+#', '-', substr($m[0], 1)) . '--'
 			: '';
 		return "$this->tempDirectory/$base$hash.php";
@@ -268,6 +268,18 @@ class Engine
 
 
 	/**
+	 * Registers run-time function.
+	 * @return static
+	 */
+	public function addFunction(string $name, callable $callback)
+	{
+		$id = $this->getCompiler()->addFunction($name);
+		$this->providers[$id] = $callback;
+		return $this;
+	}
+
+
+	/**
 	 * Adds new provider.
 	 * @return static
 	 */
@@ -287,9 +299,7 @@ class Engine
 	}
 
 
-	/**
-	 * @return static
-	 */
+	/** @return static */
 	public function setContentType(string $type)
 	{
 		$this->contentType = $type;
@@ -301,7 +311,7 @@ class Engine
 	 * Sets path to temporary directory.
 	 * @return static
 	 */
-	public function setTempDirectory(string $path)
+	public function setTempDirectory(?string $path)
 	{
 		$this->tempDirectory = $path;
 		return $this;
@@ -350,9 +360,7 @@ class Engine
 	}
 
 
-	/**
-	 * @return static
-	 */
+	/** @return static */
 	public function setLoader(ILoader $loader)
 	{
 		$this->loader = $loader;

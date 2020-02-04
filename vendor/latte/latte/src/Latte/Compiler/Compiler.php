@@ -59,13 +59,16 @@ class Compiler
 	/** @var array of [name => IMacro[]] */
 	private $macros = [];
 
+	/** @var string[] of orig name */
+	private $functions = [];
+
 	/** @var int[] IMacro flags */
 	private $flags;
 
-	/** @var HtmlNode */
+	/** @var HtmlNode|null */
 	private $htmlNode;
 
-	/** @var MacroNode */
+	/** @var MacroNode|null */
 	private $macroNode;
 
 	/** @var string[] */
@@ -106,6 +109,17 @@ class Compiler
 		}
 		$this->macros[$name][] = $macro;
 		return $this;
+	}
+
+
+	/**
+	 * Registers run-time function.
+	 */
+	public function addFunction(string $name): string
+	{
+		$lname = strtolower($name);
+		$this->functions[$lname] = $name;
+		return '_fn' . $lname;
 	}
 
 
@@ -173,6 +187,7 @@ class Compiler
 			$this->addProperty('contentType', $this->contentType);
 		}
 
+		$members = [];
 		foreach ($this->properties as $name => $value) {
 			$members[] = "\tpublic $$name = " . PhpHelpers::dump($value) . ';';
 		}
@@ -188,9 +203,7 @@ class Compiler
 	}
 
 
-	/**
-	 * @return static
-	 */
+	/** @return static */
 	public function setContentType(string $type)
 	{
 		$this->contentType = $type;
@@ -202,6 +215,18 @@ class Compiler
 	public function getMacroNode(): ?MacroNode
 	{
 		return $this->macroNode;
+	}
+
+
+	public function getMacros(): array
+	{
+		return $this->macros;
+	}
+
+
+	public function getFunctions(): array
+	{
+		return $this->functions;
 	}
 
 
@@ -687,14 +712,14 @@ class Compiler
 
 		if (strpbrk($name, '=~%^&_')) {
 			if (in_array($this->context, [self::CONTEXT_HTML_ATTRIBUTE_URL, self::CONTEXT_HTML_ATTRIBUTE_UNQUOTED_URL], true)) {
-				if (!Helpers::removeFilter($modifiers, 'nocheck') && !preg_match('#\|datastream(?=\s|\||\z)#i', $modifiers)) {
+				if (!Helpers::removeFilter($modifiers, 'nocheck') && !preg_match('#\|datastream(?=\s|\||$)#Di', $modifiers)) {
 					$modifiers .= '|checkurl';
 				}
 			}
 
 			if (!Helpers::removeFilter($modifiers, 'noescape')) {
 				$modifiers .= '|escape';
-				if ($this->context === self::CONTEXT_HTML_JS && $name === '=' && preg_match('#["\'] *\z#', $this->tokens[$this->position - 1]->text)) {
+				if ($this->context === self::CONTEXT_HTML_JS && $name === '=' && preg_match('#["\'] *$#D', $this->tokens[$this->position - 1]->text)) {
 					throw new CompileException("Do not place {$this->tokens[$this->position]->text} inside quotes.");
 				}
 			}

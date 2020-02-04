@@ -21,10 +21,10 @@ class Connection
 {
 	use Nette\SmartObject;
 
-	/** @var callable[]  function (Connection $connection): void; Occurs after connection is established */
+	/** @var callable[]&(callable(Connection $connection): void)[]; Occurs after connection is established */
 	public $onConnect;
 
-	/** @var callable[]  function (Connection $connection, ResultSet|DriverException $result): void; Occurs after query is executed */
+	/** @var callable[]&(callable(Connection $connection, ResultSet|DriverException $result): void)[]; Occurs after query is executed */
 	public $onQuery;
 
 	/** @var array */
@@ -39,7 +39,7 @@ class Connection
 	/** @var SqlPreprocessor */
 	private $preprocessor;
 
-	/** @var PDO */
+	/** @var PDO|null */
 	private $pdo;
 
 	/** @var string|null */
@@ -199,7 +199,7 @@ class Connection
 	/**
 	 * Shortcut for query()->fetch()
 	 */
-	public function fetch(string $sql, ...$params): ?Row
+	public function fetch(string $sql, ...$params): ?IRow
 	{
 		return $this->query($sql, ...$params)->fetch();
 	}

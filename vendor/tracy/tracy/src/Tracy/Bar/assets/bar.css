@@ -3,23 +3,7 @@
  */
 
 /* common styles */
-#tracy-debug {
-	display: none;
-	direction: ltr;
-	line-height: 1.5;
-}
-
-body#tracy-debug { /* in popup window */
-	margin: 0;
-	display: block;
-}
-
-#tracy-debug:not(body) {
-	position: absolute;
-	left: 0;
-	top: 0;
-}
-
+#tracy-debug,
 #tracy-debug * {
 	font: inherit;
 	line-height: inherit;
@@ -40,11 +24,37 @@ body#tracy-debug { /* in popup window */
 	white-space: inherit;
 	float: none;
 	clear: none;
+	max-width: initial;
+	min-width: initial;
+	max-height: initial;
+	min-height: initial;
 }
 
+#tracy-debug *:not(svg):not(img):not(table) {
+	width: initial;
+	height: initial;
+}
+
+#tracy-debug:before,
+#tracy-debug:after,
 #tracy-debug *:before,
 #tracy-debug *:after {
 	all: unset;
+}
+
+#tracy-debug {
+	display: none;
+	direction: ltr;
+}
+
+body#tracy-debug { /* in popup window */
+	display: block;
+}
+
+#tracy-debug:not(body) {
+	position: absolute;
+	left: 0;
+	top: 0;
 }
 
 #tracy-debug b,
@@ -251,6 +261,18 @@ body#tracy-debug .tracy-panel { /* in popup window */
 
 #tracy-debug .tracy-panel .tracy-icons {
 	display: none;
+}
+
+#tracy-debug .tracy-panel-ajax > h1::after,
+#tracy-debug .tracy-panel-redirect > h1::after {
+	content: 'ajax';
+	float: right;
+	font-size: 65%;
+	margin: 0 .3em;
+}
+
+#tracy-debug .tracy-panel-redirect h1::after {
+	content: 'redirect';
 }
 
 #tracy-debug .tracy-mode-peek,

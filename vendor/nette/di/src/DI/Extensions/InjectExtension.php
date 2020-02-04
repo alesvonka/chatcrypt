@@ -32,12 +32,11 @@ final class InjectExtension extends DI\CompilerExtension
 	public function beforeCompile()
 	{
 		foreach ($this->getContainerBuilder()->getDefinitions() as $def) {
-			if (
-				$def->getTag(self::TAG_INJECT)
-				&& ($def = $def instanceof Definitions\FactoryDefinition ? $def->getResultDefinition() : $def)
-				&& ($def instanceof Definitions\ServiceDefinition)
-			) {
-				$this->updateDefinition($def);
+			if ($def->getTag(self::TAG_INJECT)) {
+				$def = $def instanceof Definitions\FactoryDefinition ? $def->getResultDefinition() : $def;
+				if ($def instanceof Definitions\ServiceDefinition) {
+					$this->updateDefinition($def);
+				}
 			}
 		}
 	}
@@ -45,7 +44,8 @@ final class InjectExtension extends DI\CompilerExtension
 
 	private function updateDefinition(Definitions\ServiceDefinition $def): void
 	{
-		$class = $def->getType();
+		$resolver = new DI\Resolver($this->getContainerBuilder());
+		$class = $resolver->resolveEntityType($def->getFactory()) ?: $def->getType();
 		$setups = $def->getSetup();
 
 		foreach (self::getInjectProperties($class) as $property => $type) {
@@ -62,7 +62,7 @@ final class InjectExtension extends DI\CompilerExtension
 			array_unshift($setups, $inject);
 		}
 
-		foreach (array_reverse(self::getInjectMethods($def->getType())) as $method) {
+		foreach (array_reverse(self::getInjectMethods($class)) as $method) {
 			$inject = new Definitions\Statement($method);
 			foreach ($setups as $key => $setup) {
 				if ($setup->getEntity() === $inject->getEntity()) {
@@ -108,7 +108,8 @@ final class InjectExtension extends DI\CompilerExtension
 		foreach (get_class_vars($class) as $name => $foo) {
 			$rp = new \ReflectionProperty($class, $name);
 			if (DI\Helpers::parseAnnotation($rp, 'inject') !== null) {
-				if ($type = DI\Helpers::parseAnnotation($rp, 'var')) {
+				if ($type = Reflection::getPropertyType($rp)) {
+				} elseif ($type = DI\Helpers::parseAnnotation($rp, 'var')) {
 					$type = Reflection::expandClassName($type, Reflection::getPropertyDeclaringClass($rp));
 				}
 				$res[$name] = $type;
@@ -142,9 +143,9 @@ final class InjectExtension extends DI\CompilerExtension
 
 	/**
 	 * @param  object|string  $class
-	 * @param  DI\Resolver|DI\Container  $container
+	 * @param  DI\Container|DI\ContainerBuilder|null  $container
 	 */
-	private static function checkType($class, string $name, ?string $type, $container = null): void
+	private static function checkType($class, string $name, ?string $type, $container): void
 	{
 		$propName = Reflection::toString(new \ReflectionProperty($class, $name));
 		if (!$type) {

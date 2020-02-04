@@ -81,16 +81,16 @@ class Form extends Container implements Nette\Utils\IHtmlString
 	/** @internal protection token ID */
 	public const PROTECTOR_ID = '_token_';
 
-	/** @var callable[]  function (Form $sender): void; Occurs when the form is submitted and successfully validated */
+	/** @var callable[]&(callable(Form, mixed): void)[]; Occurs when the form is submitted and successfully validated */
 	public $onSuccess;
 
-	/** @var callable[]  function (Form $sender): void; Occurs when the form is submitted and is not valid */
+	/** @var callable[]&(callable(Form): void)[]; Occurs when the form is submitted and is not valid */
 	public $onError;
 
-	/** @var callable[]  function (Form $sender): void; Occurs when the form is submitted */
+	/** @var callable[]&(callable(Form): void)[]; Occurs when the form is submitted */
 	public $onSubmit;
 
-	/** @var callable[]  function (Form $sender): void; Occurs before the form is rendered */
+	/** @var callable[]&(callable(Form): void)[]; Occurs before the form is rendered */
 	public $onRender;
 
 	/** @var Nette\Http\IRequest  used only by standalone form */
@@ -204,12 +204,23 @@ class Form extends Container implements Nette\Utils\IHtmlString
 
 
 	/**
+	 * Changes forms's HTML attribute.
+	 * @return static
+	 */
+	public function setHtmlAttribute(string $name, $value = true)
+	{
+		$this->getElementPrototype()->$name = $value;
+		return $this;
+	}
+
+
+	/**
 	 * Cross-Site Request Forgery (CSRF) form protection.
 	 */
 	public function addProtection(string $errorMessage = null): Controls\CsrfProtection
 	{
 		$control = new Controls\CsrfProtection($errorMessage);
-		$this->addComponent($control, self::PROTECTOR_ID, key($this->getComponents()));
+		$this->addComponent($control, self::PROTECTOR_ID, key((array) $this->getComponents()));
 		return $control;
 	}
 
@@ -237,7 +248,7 @@ class Form extends Container implements Nette\Utils\IHtmlString
 
 	/**
 	 * Removes fieldset group from form.
-	 * @param  string|int|ControlGroup  $name
+	 * @param  string|ControlGroup  $name
 	 */
 	public function removeGroup($name): void
 	{
@@ -416,7 +427,7 @@ class Form extends Container implements Nette\Utils\IHtmlString
 	{
 		foreach ($handlers as $handler) {
 			$params = Nette\Utils\Callback::toReflection($handler)->getParameters();
-			$values = isset($params[1]) ? $this->getValues((string) $params[1]->getType()) : null;
+			$values = isset($params[1]) ? $this->getValues($params[1]->getType() ? $params[1]->getType()->getName() : null) : null;
 			$handler($button ?: $this, $values);
 			if (!$this->isValid()) {
 				return;
@@ -486,11 +497,7 @@ class Form extends Container implements Nette\Utils\IHtmlString
 		if (!$this->submittedBy || !$this->isMethod('post') || empty($_SERVER['CONTENT_LENGTH'])) {
 			return;
 		}
-		$maxSize = ini_get('post_max_size');
-		$units = ['k' => 10, 'm' => 20, 'g' => 30];
-		if (isset($units[$ch = strtolower(substr($maxSize, -1))])) {
-			$maxSize = (int) $maxSize << $units[$ch];
-		}
+		$maxSize = Helpers::iniGetSize('post_max_size');
 		if ($maxSize > 0 && $maxSize < $_SERVER['CONTENT_LENGTH']) {
 			$this->addError(sprintf(Validator::$messages[self::MAX_FILE_SIZE], $maxSize));
 		}
@@ -619,10 +626,11 @@ class Form extends Container implements Nette\Utils\IHtmlString
 			return $this->getRenderer()->render($this);
 
 		} catch (\Throwable $e) {
-			if (func_num_args()) {
+			if (func_num_args() || PHP_VERSION_ID >= 70400) {
 				throw $e;
 			}
 			trigger_error('Exception in ' . __METHOD__ . "(): {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}", E_USER_ERROR);
+			return '';
 		}
 	}
 

@@ -21,13 +21,13 @@ class ContainerPanel implements Tracy\IBarPanel
 {
 	use Nette\SmartObject;
 
-	/** @var int */
+	/** @var float|null */
 	public static $compilationTime;
 
 	/** @var Nette\DI\Container */
 	private $container;
 
-	/** @var int|null */
+	/** @var float|null */
 	private $elapsedTime;
 
 
@@ -43,10 +43,10 @@ class ContainerPanel implements Tracy\IBarPanel
 	 */
 	public function getTab(): string
 	{
-		ob_start(function () {});
-		$elapsedTime = $this->elapsedTime;
-		require __DIR__ . '/templates/ContainerPanel.tab.phtml';
-		return ob_get_clean();
+		return Nette\Utils\Helpers::capture(function () {
+			$elapsedTime = $this->elapsedTime;
+			require __DIR__ . '/templates/ContainerPanel.tab.phtml';
+		});
 	}
 
 
@@ -55,16 +55,12 @@ class ContainerPanel implements Tracy\IBarPanel
 	 */
 	public function getPanel(): string
 	{
-		$container = $this->container;
-		$rc = new \ReflectionClass($container);
-		$file = $rc->getFileName();
+		$rc = new \ReflectionClass($this->container);
 		$tags = [];
-		$instances = $this->getContainerProperty('instances');
-		$wiring = $this->getContainerProperty('wiring');
 		$types = [];
 		foreach ($rc->getMethods() as $method) {
 			if (preg_match('#^createService(.+)#', $method->getName(), $m) && $method->getReturnType()) {
-				$types[lcfirst(str_replace('__', '.', $m[1]))] = (string) $method->getReturnType();
+				$types[lcfirst(str_replace('__', '.', $m[1]))] = $method->getReturnType()->getName();
 			}
 		}
 		$types = $this->getContainerProperty('types') + $types;
@@ -75,9 +71,13 @@ class ContainerPanel implements Tracy\IBarPanel
 			}
 		}
 
-		ob_start(function () {});
-		require __DIR__ . '/templates/ContainerPanel.panel.phtml';
-		return ob_get_clean();
+		return Nette\Utils\Helpers::capture(function () use ($tags, $types, $rc) {
+			$container = $this->container;
+			$file = $rc->getFileName();
+			$instances = $this->getContainerProperty('instances');
+			$wiring = $this->getContainerProperty('wiring');
+			require __DIR__ . '/templates/ContainerPanel.panel.phtml';
+		});
 	}
 
 

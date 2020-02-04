@@ -80,7 +80,6 @@ final class SearchExtension extends Nette\DI\CompilerExtension
 		$robot->reportParseErrors(false);
 		$robot->refresh();
 		$classes = array_unique(array_keys($robot->getIndexedClasses()));
-		$classes = array_filter($classes, 'class_exists');
 
 		$exclude = $config->exclude;
 		$acceptRE = self::buildNameRegexp($config->classes);
@@ -92,7 +91,12 @@ final class SearchExtension extends Nette\DI\CompilerExtension
 		foreach ($classes as $class) {
 			$rc = new \ReflectionClass($class);
 			if (
-				$rc->isInstantiable()
+				($rc->isInstantiable()
+					||
+					($rc->isInterface()
+					&& count($methods = $rc->getMethods()) === 1
+					&& $methods[0]->getName() === 'create')
+				)
 				&& (!$acceptRE || preg_match($acceptRE, $rc->getName()))
 				&& (!$rejectRE || !preg_match($rejectRE, $rc->getName()))
 				&& (!$acceptParent || Arrays::some($acceptParent, function ($nm) use ($rc) { return $rc->isSubclassOf($nm); }))
@@ -109,12 +113,21 @@ final class SearchExtension extends Nette\DI\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 
-		foreach ($this->classes as $class => $tags) {
-			if (!$builder->findByType($class)) {
-				$builder->addDefinition(null)
-					->setType($class)
-					->setTags(Arrays::normalize($tags, true));
+		foreach ($this->classes as $class => $foo) {
+			if ($builder->findByType($class)) {
+				unset($this->classes[$class]);
 			}
+		}
+
+		foreach ($this->classes as $class => $tags) {
+			if (class_exists($class)) {
+				$def = $builder->addDefinition(null)
+					->setType($class);
+			} else {
+				$def = $builder->addFactoryDefinition(null)
+					->setImplement($class);
+			}
+			$def->setTags(Arrays::normalize($tags, true));
 		}
 	}
 

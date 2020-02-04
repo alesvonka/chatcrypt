@@ -6,7 +6,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/nette/latte/badge.svg?branch=master)](https://coveralls.io/github/nette/latte?branch=master)
 [![Latest Stable Version](https://poser.pugx.org/latte/latte/v/stable)](https://github.com/nette/latte/releases)
 [![License](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://github.com/nette/latte/blob/master/license.md)
-[![Join the chat at https://gitter.im/nette/latte](https://badges.gitter.im/nette/latte.svg)](https://gitter.im/nette/latte)
 
 
 Introduction
@@ -78,7 +77,7 @@ The recommended way to install Latte is via Composer (alternatively you can [dow
 composer require latte/latte
 ```
 
-Latte requires PHP version 5.4.4 and supports PHP up to 7.3. The dev-master version requires PHP 7.1.
+Latte requires PHP version 7.1 and supports PHP up to 7.4.
 
 
 Usage

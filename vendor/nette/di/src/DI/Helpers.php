@@ -42,6 +42,11 @@ final class Helpers
 		} elseif ($var instanceof Statement) {
 			return new Statement(self::expand($var->getEntity(), $params, $recursive), self::expand($var->arguments, $params, $recursive));
 
+		} elseif ($var === '%parameters%' && !array_key_exists('parameters', $params)) {
+			return $recursive
+				? self::expand($params, $params, (is_array($recursive) ? $recursive : []))
+				: $params;
+
 		} elseif (!is_string($var)) {
 			return $var;
 		}
@@ -101,9 +106,9 @@ final class Helpers
 		foreach ($args as $k => $v) {
 			if ($v === '...') {
 				unset($args[$k]);
-			} elseif (is_string($v) && preg_match('#^[\w\\\\]*::[A-Z][A-Z0-9_]*\z#', $v, $m)) {
+			} elseif (is_string($v) && preg_match('#^[\w\\\\]*::[A-Z][A-Z0-9_]*$#D', $v, $m)) {
 				$args[$k] = constant(ltrim($v, ':'));
-			} elseif (is_string($v) && preg_match('#^@[\w\\\\]+\z#', $v)) {
+			} elseif (is_string($v) && preg_match('#^@[\w\\\\]+$#D', $v)) {
 				$args[$k] = new Reference(substr($v, 1));
 			} elseif (is_array($v)) {
 				$args[$k] = self::filterArguments($v);
@@ -147,6 +152,7 @@ final class Helpers
 
 	/**
 	 * Returns an annotation value.
+	 * @param  \ReflectionFunctionAbstract|\ReflectionProperty|\ReflectionClass  $ref
 	 */
 	public static function parseAnnotation(\Reflector $ref, string $name): ?string
 	{

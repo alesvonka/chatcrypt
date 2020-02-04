@@ -39,6 +39,9 @@ class Environment
 	/** @var int initial output buffer level */
 	private static $obLevel;
 
+	/** @var int */
+	private static $exitCode = 0;
+
 
 	/**
 	 * Configures testing environment.
@@ -103,15 +106,17 @@ class Environment
 
 			$error = error_get_last();
 			register_shutdown_function(function () use ($error): void {
-				if (in_array($error['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE], true)) {
+				if (in_array($error['type'] ?? null, [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE], true)) {
 					if (($error['type'] & error_reporting()) !== $error['type']) { // show fatal errors hidden by @shutup
 						self::removeOutputBuffers();
-						echo "\nFatal error: $error[message] in $error[file] on line $error[line]\n";
+						echo "\n", Dumper::color('white/red', "Fatal error: $error[message] in $error[file] on line $error[line]"), "\n";
 					}
 				} elseif (self::$checkAssertions && !Assert::$counter) {
 					self::removeOutputBuffers();
-					echo "\nError: This test forgets to execute an assertion.\n";
-					exit(Runner\Job::CODE_FAIL);
+					echo "\n", Dumper::color('white/red', 'Error: This test forgets to execute an assertion.'), "\n";
+					self::exit(Runner\Job::CODE_FAIL);
+				} elseif (!getenv(self::RUNNER) && self::$exitCode !== Runner\Job::CODE_SKIP) {
+					echo "\n", (self::$exitCode ? Dumper::color('white/red', 'FAILURE') : Dumper::color('white/green', 'OK')), "\n";
 				}
 			});
 		});
@@ -126,7 +131,7 @@ class Environment
 		self::removeOutputBuffers();
 		self::$checkAssertions = false;
 		echo Dumper::dumpException($e);
-		exit($e instanceof AssertException ? Runner\Job::CODE_FAIL : Runner\Job::CODE_ERROR);
+		self::exit($e instanceof AssertException ? Runner\Job::CODE_FAIL : Runner\Job::CODE_ERROR);
 	}
 
 
@@ -137,7 +142,7 @@ class Environment
 	{
 		self::$checkAssertions = false;
 		echo "\nSkipped:\n$message\n";
-		die(Runner\Job::CODE_SKIP);
+		self::exit(Runner\Job::CODE_SKIP);
 	}
 
 
@@ -161,8 +166,9 @@ class Environment
 	public static function getTestAnnotations(): array
 	{
 		$trace = debug_backtrace();
-		$file = $trace[count($trace) - 1]['file'];
-		return Helpers::parseDocComment(file_get_contents($file)) + ['file' => $file];
+		return ($file = $trace[count($trace) - 1]['file'] ?? null)
+			? Helpers::parseDocComment(file_get_contents($file)) + ['file' => $file]
+			: [];
 	}
 
 
@@ -210,5 +216,12 @@ class Environment
 	private static function removeOutputBuffers(): void
 	{
 		while (ob_get_level() > self::$obLevel && @ob_end_flush()); // @ may be not removable
+	}
+
+
+	public static function exit(int $code = 0): void
+	{
+		self::$exitCode = $code;
+		exit($code);
 	}
 }
