@@ -24,7 +24,13 @@ class Printer
 	protected $indentation = "\t";
 
 	/** @var int */
+	protected $linesBetweenProperties = 0;
+
+	/** @var int */
 	protected $linesBetweenMethods = 2;
+
+	/** @var string */
+	protected $returnTypeColon = ': ';
 
 	/** @var bool */
 	private $resolveTypes = true;
@@ -122,7 +128,7 @@ class Printer
 		foreach ($class->getProperties() as $property) {
 			$type = $property->getType();
 			$def = (($property->getVisibility() ?: 'public') . ($property->isStatic() ? ' static' : '') . ' '
-				. ($type ? ($property->isNullable() ? '?' : '') . ($this->resolveTypes && $namespace ? $namespace->unresolveName($type) : $type) . ' ' : '')
+				. ltrim($this->printType($type, $property->isNullable(), $namespace) . ' ')
 				. '$' . $property->getName());
 
 			$properties[] = Helpers::formatDocComment((string) $property->getComment())
@@ -138,8 +144,8 @@ class Printer
 
 		$members = array_filter([
 			implode('', $traits),
-			implode('', $consts),
-			implode("\n", $properties),
+			$this->joinProperties($consts),
+			$this->joinProperties($properties),
 			($methods && $properties ? str_repeat("\n", $this->linesBetweenMethods - 1) : '')
 			. implode(str_repeat("\n", $this->linesBetweenMethods), $methods),
 		]);
@@ -241,14 +247,14 @@ class Printer
 	/**
 	 * @param Closure|GlobalFunction|Method  $function
 	 */
-	protected function printParameters($function, ?PhpNamespace $namespace): string
+	public function printParameters($function, PhpNamespace $namespace = null): string
 	{
 		$params = [];
 		$list = $function->getParameters();
 		foreach ($list as $param) {
 			$variadic = $function->isVariadic() && $param === end($list);
 			$type = $param->getType();
-			$params[] = ($type ? ($param->isNullable() ? '?' : '') . ($this->resolveTypes && $namespace ? $namespace->unresolveName($type) : $type) . ' ' : '')
+			$params[] = ltrim($this->printType($type, $param->isNullable(), $namespace) . ' ')
 				. ($param->isReference() ? '&' : '')
 				. ($variadic ? '...' : '')
 				. '$' . $param->getName()
@@ -261,13 +267,29 @@ class Printer
 	}
 
 
+	public function printType(?string $type, bool $nullable = false, PhpNamespace $namespace = null): string
+	{
+		return $type
+			? ($nullable ? '?' : '') . ($this->resolveTypes && $namespace ? $namespace->unresolveName($type) : $type)
+			: '';
+	}
+
+
 	/**
 	 * @param Closure|GlobalFunction|Method  $function
 	 */
-	protected function printReturnType($function, ?PhpNamespace $namespace): string
+	private function printReturnType($function, ?PhpNamespace $namespace): string
 	{
-		return $function->getReturnType()
-			? ': ' . ($function->isReturnNullable() ? '?' : '') . ($this->resolveTypes && $namespace ? $namespace->unresolveName($function->getReturnType()) : $function->getReturnType())
+		return ($tmp = $this->printType($function->getReturnType(), $function->isReturnNullable(), $namespace))
+			? $this->returnTypeColon . $tmp
 			: '';
+	}
+
+
+	private function joinProperties(array $props)
+	{
+		return $this->linesBetweenProperties
+			? implode(str_repeat("\n", $this->linesBetweenProperties), $props)
+			: preg_replace('#^(\w.*\n)\n(?=\w.*;)#m', '$1', implode("\n", $props));
 	}
 }

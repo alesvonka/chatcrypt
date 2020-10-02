@@ -76,6 +76,15 @@ final class ClassType
 	}
 
 
+	/**
+	 * @param  string|object  $class
+	 */
+	public static function withBodiesFrom($class): self
+	{
+		return (new Factory)->fromClassReflection(new \ReflectionClass($class), true);
+	}
+
+
 	public function __construct(string $name = null, PhpNamespace $namespace = null)
 	{
 		$this->setName($name);
@@ -268,6 +277,17 @@ final class ClassType
 	}
 
 
+	/** @return static */
+	public function removeImplement(string $name): self
+	{
+		$key = array_search($name, $this->implements, true);
+		if ($key !== false) {
+			unset($this->implements[$key]);
+		}
+		return $this;
+	}
+
+
 	/**
 	 * @param  string[]  $names
 	 * @return static
@@ -299,6 +319,14 @@ final class ClassType
 	{
 		$this->validateNames([$name]);
 		$this->traits[$name] = $resolutions;
+		return $this;
+	}
+
+
+	/** @return static */
+	public function removeTrait(string $name): self
+	{
+		unset($this->traits[$name]);
 		return $this;
 	}
 

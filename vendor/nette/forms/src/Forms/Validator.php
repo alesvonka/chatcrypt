@@ -47,7 +47,10 @@ class Validator
 	];
 
 
-	/** @internal */
+	/**
+	 * @return string|Nette\Utils\IHtmlString
+	 * @internal
+	 */
 	public static function formatMessage(Rule $rule, bool $withValue = true)
 	{
 		$message = $rule->message;
@@ -75,7 +78,7 @@ class Validator
 						$caption = $caption instanceof Nette\Utils\IHtmlString
 							? $caption->getText()
 							: ($translator ? $translator->translate($caption) : $caption);
-						return rtrim($caption, ':');
+						return rtrim((string) $caption, ':');
 					}
 					return '';
 				case 'value': return $withValue ? $rule->control->getValue() : $m[0];
@@ -281,7 +284,9 @@ class Validator
 	 */
 	public static function validateNumeric(IControl $control): bool
 	{
-		return (bool) Strings::match($control->getValue(), '#^\d+$#D');
+		$value = $control->getValue();
+		return (is_int($value) && $value >= 0)
+			|| (is_string($value) && Strings::match($value, '#^\d+$#D'));
 	}
 
 
@@ -290,10 +295,11 @@ class Validator
 	 */
 	public static function validateInteger(IControl $control): bool
 	{
-		if (Validators::isNumericInt($value = $control->getValue())) {
-			if (!is_float($tmp = $value * 1)) { // bigint leave as string
-				$control->setValue($tmp);
-			}
+		if (
+			Validators::isNumericInt($value = $control->getValue())
+			&& !is_float($tmp = $value * 1) // too big for int?
+		) {
+			$control->setValue($tmp);
 			return true;
 		}
 		return false;
