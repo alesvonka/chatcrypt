@@ -47,7 +47,10 @@ class Container
 	public function __construct(array $params = [])
 	{
 		$this->parameters = $params;
-		$this->methods = array_flip(get_class_methods($this));
+		$this->methods = array_flip(array_filter(
+			get_class_methods($this),
+			function ($s) { return preg_match('#^createService.#', $s); }
+		));
 	}
 
 
@@ -118,6 +121,17 @@ class Container
 			$this->instances[$name] = $this->createService($name);
 		}
 		return $this->instances[$name];
+	}
+
+
+	/**
+	 * Gets the service object by name.
+	 * @return object
+	 * @throws MissingServiceException
+	 */
+	public function getByName(string $name)
+	{
+		return $this->getService($name);
 	}
 
 
@@ -217,7 +231,16 @@ class Container
 			throw new MissingServiceException("Multiple services of type $type found: " . implode(', ', $names) . '.');
 
 		} elseif ($throw) {
-			throw new MissingServiceException("Service of type $type not found.");
+			if (!class_exists($type) && !interface_exists($type)) {
+				throw new MissingServiceException("Service of type '$type' not found. Check class name because it cannot be found.");
+			}
+			foreach ($this->methods as $method => $foo) {
+				$methodType = (new \ReflectionMethod(get_class($this), $method))->getReturnType()->getName();
+				if (is_a($methodType, $type, true)) {
+					throw new MissingServiceException("Service of type $type is not autowired or is missing in di › export › types.");
+				}
+			}
+			throw new MissingServiceException("Service of type $type not found. Did you add it to configuration file?");
 		}
 		return null;
 	}

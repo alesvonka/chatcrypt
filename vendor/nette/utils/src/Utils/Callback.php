@@ -86,7 +86,11 @@ final class Callback
 
 
 	/**
+	 * Checks that $callable is valid PHP callback. Otherwise throws exception. If the $syntax is set to true, only verifies
+	 * that $callable has a valid structure to be used as a callback, but does not verify if the class or method actually exists.
+	 * @param  mixed  $callable
 	 * @return callable
+	 * @throws Nette\InvalidArgumentException
 	 */
 	public static function check($callable, bool $syntax = false)
 	{
@@ -100,6 +104,10 @@ final class Callback
 	}
 
 
+	/**
+	 * Converts PHP callback to textual form. Class or method may not exists.
+	 * @param  mixed  $callable
+	 */
 	public static function toString($callable): string
 	{
 		if ($callable instanceof \Closure) {
@@ -114,6 +122,12 @@ final class Callback
 	}
 
 
+	/**
+	 * Returns reflection for method or function used in PHP callback.
+	 * @param  callable  $callable  type check is escalated to ReflectionException
+	 * @return \ReflectionMethod|\ReflectionFunction
+	 * @throws \ReflectionException  if callback is not valid
+	 */
 	public static function toReflection($callable): \ReflectionFunctionAbstract
 	{
 		if ($callable instanceof \Closure) {
@@ -132,6 +146,9 @@ final class Callback
 	}
 
 
+	/**
+	 * Checks whether PHP callback is function or static method.
+	 */
 	public static function isStatic(callable $callable): bool
 	{
 		return is_array($callable) ? is_string($callable[0]) : is_string($callable);
@@ -139,23 +156,22 @@ final class Callback
 
 
 	/**
-	 * Unwraps closure created by Closure::fromCallable()
-	 * @internal
+	 * Unwraps closure created by Closure::fromCallable().
 	 */
 	public static function unwrap(\Closure $closure): callable
 	{
 		$r = new \ReflectionFunction($closure);
-		if (substr($r->getName(), -1) === '}') {
+		if (substr($r->name, -1) === '}') {
 			return $closure;
 
 		} elseif ($obj = $r->getClosureThis()) {
-			return [$obj, $r->getName()];
+			return [$obj, $r->name];
 
 		} elseif ($class = $r->getClosureScopeClass()) {
-			return [$class->getName(), $r->getName()];
+			return [$class->name, $r->name];
 
 		} else {
-			return $r->getName();
+			return $r->name;
 		}
 	}
 }
