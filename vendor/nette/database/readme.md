@@ -2,7 +2,7 @@ Nette Database
 ==============
 
 [![Downloads this Month](https://img.shields.io/packagist/dm/nette/database.svg)](https://packagist.org/packages/nette/database)
-[![Build Status](https://travis-ci.org/nette/database.svg?branch=master)](https://travis-ci.org/nette/database)
+[![Tests](https://github.com/nette/database/workflows/Tests/badge.svg?branch=master)](https://github.com/nette/database/actions)
 [![Build Status Windows](https://ci.appveyor.com/api/projects/status/github/nette/database?branch=master&svg=true)](https://ci.appveyor.com/project/dg/database/branch/master)
 [![Latest Stable Version](https://poser.pugx.org/nette/database/v/stable)](https://github.com/nette/database/releases)
 [![License](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://github.com/nette/database/blob/master/license.md)
@@ -21,7 +21,15 @@ The [Nette Database Core](https://doc.nette.org/database-core) is a wrapper arou
 
 The [Nette Database Explorer](https://doc.nette.org/database-explorer) layer helps you to fetch database data more easily and in a more optimized way.
 
-If you like Nette, **[please make a donation now](https://nette.org/donate)**. Thank you!
+
+[Support Me](https://github.com/sponsors/dg)
+--------------------------------------------
+
+Do you like Nette Database? Are you looking forward to the new features?
+
+[![Buy me a coffee](https://files.nette.org/icons/donation-3.svg)](https://github.com/sponsors/dg)
+
+Thank you!
 
 
 Installation
@@ -33,7 +41,7 @@ The recommended way to install is via Composer:
 composer require nette/database
 ```
 
-It requires PHP version 7.1 and supports PHP up to 7.4.
+It requires PHP version 7.2 and supports PHP up to 8.1.
 
 
 Usage
@@ -71,17 +79,17 @@ Nette Database Explorer layer helps you to fetch database data more easily and i
 
 Let's take a look at common use-case. You need to fetch books and their authors. It is common 1:N relationship. The often used implementation fetches data by one SQL query with table joins. The second possibility is to fetch data separately, run one query for getting books and then get an author for each book by another query (e.g. in your foreach cycle). This could be easily optimized to run only two queries, one for books, and another for the needed authors - and this is just the way how Nette Database Explorer does it.
 
-Selecting data starts with the table, just call `$context->table()` on the `Nette\Database\Context` object. The easiest way to get it is [described here](https://doc.nette.org/database-core#toc-configuration), but if we use Nette Database Explorer alone, it can be [manually created](https://doc.nette.org/database-explorer#toc-manual-creating-nette-database-context).
+Selecting data starts with the table, just call `$explorer->table()` on the `Nette\Database\Explorer` object. The easiest way to get it is [described here](https://doc.nette.org/database-core#toc-configuration), but if we use Nette Database Explorer alone, it can be [manually created](https://doc.nette.org/database-explorer#toc-manual-creating-nette-database-context).
 
 
 ```php
-$selection = $context->table('book'); // db table name is "book"
+$selection = $explorer->table('book'); // db table name is "book"
 ```
 
 We can simply iterate over the selection and pass through all the books. The rows are fetched as ActiveRow instances; you can read row data from their properties.
 
 ```php
-$books = $context->table('book');
+$books = $explorer->table('book');
 foreach ($books as $book) {
 	echo $book->title;
 	echo $book->author_id;
@@ -91,7 +99,7 @@ foreach ($books as $book) {
 Getting just one specific row is done by `get()` method, which directly returns an ActiveRow instance.
 
 ```php
-$book = $context->table('book')->get(2); // returns book with id 2
+$book = $explorer->table('book')->get(2); // returns book with id 2
 echo $book->title;
 echo $book->author_id;
 ```
@@ -100,7 +108,7 @@ Working with relationships
 --------------------------
 
 ```php
-$books = $context->table('book');
+$books = $explorer->table('book');
 
 foreach ($books as $book) {
 	echo 'title:      ' . $book->title;

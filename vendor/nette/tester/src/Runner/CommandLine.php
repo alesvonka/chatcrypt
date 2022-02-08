@@ -21,6 +21,7 @@ class CommandLine
 		REPEATABLE = 'repeatable',
 		ENUM = 'enum',
 		REALPATH = 'realpath',
+		NORMALIZER = 'normalizer',
 		VALUE = 'default';
 
 	/** @var array[] */
@@ -117,10 +118,18 @@ class CommandLine
 				}
 			}
 
-			if (!empty($opt[self::ENUM]) && !in_array($arg, $opt[self::ENUM], true) && !($opt[self::OPTIONAL] && $arg === true)) {
+			$this->checkArg($opt, $arg);
+
+			if (
+				!empty($opt[self::ENUM])
+				&& !in_array(is_array($arg) ? reset($arg) : $arg, $opt[self::ENUM], true)
+				&& !(
+					$opt[self::OPTIONAL]
+					&& $arg === true
+				)
+			) {
 				throw new \Exception("Value of option $name must be " . implode(', or ', $opt[self::ENUM]) . '.');
 			}
-			$this->checkArg($opt, $arg);
 
 			if (empty($opt[self::REPEATABLE])) {
 				$params[$name] = $arg;
@@ -155,6 +164,10 @@ class CommandLine
 
 	public function checkArg(array $opt, &$arg): void
 	{
+		if (!empty($opt[self::NORMALIZER])) {
+			$arg = call_user_func($opt[self::NORMALIZER], $arg);
+		}
+
 		if (!empty($opt[self::REALPATH])) {
 			$path = realpath($arg);
 			if ($path === false) {

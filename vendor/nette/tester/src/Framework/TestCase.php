@@ -23,7 +23,7 @@ class TestCase
 	/** @var bool */
 	private $handleErrors = false;
 
-	/** @var callable|null|false */
+	/** @var callable|false|null */
 	private $prevErrorHandler = false;
 
 
@@ -43,16 +43,23 @@ class TestCase
 		if (isset($_SERVER['argv']) && ($tmp = preg_filter('#--method=([\w-]+)$#Ai', '$1', $_SERVER['argv']))) {
 			$method = reset($tmp);
 			if ($method === self::LIST_METHODS) {
-				Environment::$checkAssertions = false;
-				header('Content-Type: text/plain');
-				echo '[' . implode(',', $methods) . ']';
+				$this->sendMethodList($methods);
 				return;
 			}
-			$this->runTest($method);
+
+			try {
+				$this->runTest($method);
+			} catch (TestCaseSkippedException $e) {
+				Environment::skip($e->getMessage());
+			}
 
 		} else {
 			foreach ($methods as $method) {
-				$this->runTest($method);
+				try {
+					$this->runTest($method);
+				} catch (TestCaseSkippedException $e) {
+					echo "\nSkipped:\n{$e->getMessage()}\n";
+				}
 			}
 		}
 	}
@@ -75,7 +82,7 @@ class TestCase
 			throw new TestCaseException("Method {$method->getName()} is not public. Make it public or rename it.");
 		}
 
-		$info = Helpers::parseDocComment((string) $method->getDocComment()) + ['dataprovider' => null, 'throws' => null];
+		$info = Helpers::parseDocComment((string) $method->getDocComment()) + ['throws' => null];
 
 		if ($info['throws'] === '') {
 			throw new TestCaseException("Missing class name in @throws annotation for {$method->getName()}().");
@@ -85,34 +92,9 @@ class TestCase
 			$throws = is_string($info['throws']) ? preg_split('#\s+#', $info['throws'], 2) : [];
 		}
 
-		$data = [];
-		if ($args === null) {
-			$defaultParams = [];
-			foreach ($method->getParameters() as $param) {
-				$defaultParams[$param->getName()] = $param->isDefaultValueAvailable() ? $param->getDefaultValue() : null;
-			}
-
-			foreach ((array) $info['dataprovider'] as $i => $provider) {
-				$res = $this->getData($provider);
-				if (!is_array($res) && !$res instanceof \Traversable) {
-					throw new TestCaseException("Data provider $provider() doesn't return array or Traversable.");
-				}
-
-				foreach ($res as $k => $set) {
-					$data["$i-$k"] = is_string(key($set)) ? array_merge($defaultParams, $set) : $set;
-				}
-			}
-
-			if (!$info['dataprovider']) {
-				if ($method->getNumberOfRequiredParameters()) {
-					throw new TestCaseException("Method {$method->getName()}() has arguments, but @dataProvider is missing.");
-				}
-				$data[] = [];
-			}
-		} else {
-			$data[] = $args;
-		}
-
+		$data = $args === null
+			? $this->prepareTestData($method, (array) ($info['dataprovider'] ?? []))
+			: [$args];
 
 		if ($this->prevErrorHandler === false) {
 			$this->prevErrorHandler = set_error_handler(function (int $severity): ?bool {
@@ -121,7 +103,9 @@ class TestCase
 					$this->silentTearDown();
 				}
 
-				return $this->prevErrorHandler ? ($this->prevErrorHandler)(...func_get_args()) : false;
+				return $this->prevErrorHandler
+					? ($this->prevErrorHandler)(...func_get_args())
+					: false;
 			});
 		}
 
@@ -153,7 +137,8 @@ class TestCase
 				$this->tearDown();
 
 			} catch (AssertException $e) {
-				throw $e->setMessage(sprintf('%s in %s(%s)%s',
+				throw $e->setMessage(sprintf(
+					'%s in %s(%s)%s',
 					$e->origMessage,
 					$method->getName(),
 					substr(Dumper::toLine($params), 1, -1),
@@ -206,9 +191,87 @@ class TestCase
 		}
 		restore_error_handler();
 	}
+
+
+	/**
+	 * Skips the test.
+	 */
+	protected function skip(string $message = ''): void
+	{
+		throw new TestCaseSkippedException($message);
+	}
+
+
+	private function sendMethodList(array $methods): void
+	{
+		Environment::$checkAssertions = false;
+		header('Content-Type: text/plain');
+		echo "\n";
+		echo 'TestCase:' . static::class . "\n";
+		echo 'Method:' . implode("\nMethod:", $methods) . "\n";
+
+		$dependentFiles = [];
+		$reflections = [new \ReflectionObject($this)];
+		while (count($reflections)) {
+			$rc = array_shift($reflections);
+			$dependentFiles[$rc->getFileName()] = 1;
+
+			if ($rpc = $rc->getParentClass()) {
+				$reflections[] = $rpc;
+			}
+
+			foreach ($rc->getTraits() as $rt) {
+				$reflections[] = $rt;
+			}
+		}
+		echo 'Dependency:' . implode("\nDependency:", array_keys($dependentFiles)) . "\n";
+	}
+
+
+	private function prepareTestData(\ReflectionMethod $method, array $dataprovider): array
+	{
+		$data = $defaultParams = [];
+
+		foreach ($method->getParameters() as $param) {
+			$defaultParams[$param->getName()] = $param->isDefaultValueAvailable()
+				? $param->getDefaultValue()
+				: null;
+		}
+
+		foreach ($dataprovider as $i => $provider) {
+			$res = $this->getData($provider);
+			if (!is_array($res) && !$res instanceof \Traversable) {
+				throw new TestCaseException("Data provider $provider() doesn't return array or Traversable.");
+			}
+
+			foreach ($res as $k => $set) {
+				if (!is_array($set)) {
+					$type = is_object($set) ? get_class($set) : gettype($set);
+					throw new TestCaseException("Data provider $provider() item '$k' must be an array, $type given.");
+				}
+
+				$data["$i-$k"] = is_string(key($set))
+					? array_merge($defaultParams, $set)
+					: $set;
+			}
+		}
+
+		if (!$dataprovider) {
+			if ($method->getNumberOfRequiredParameters()) {
+				throw new TestCaseException("Method {$method->getName()}() has arguments, but @dataProvider is missing.");
+			}
+			$data[] = [];
+		}
+		return $data;
+	}
 }
 
 
 class TestCaseException extends \Exception
+{
+}
+
+
+class TestCaseSkippedException extends \Exception
 {
 }

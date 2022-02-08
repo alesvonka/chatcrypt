@@ -53,6 +53,7 @@ class DateTime extends \DateTime implements \JsonSerializable
 			if ($time <= self::YEAR) {
 				$time += time();
 			}
+
 			return (new static('@' . $time))->setTimezone(new \DateTimeZone(date_default_timezone_get()));
 
 		} else { // textual or null
@@ -66,12 +67,27 @@ class DateTime extends \DateTime implements \JsonSerializable
 	 * @return static
 	 * @throws Nette\InvalidArgumentException if the date and time are not valid.
 	 */
-	public static function fromParts(int $year, int $month, int $day, int $hour = 0, int $minute = 0, float $second = 0.0)
-	{
-		$s = sprintf('%04d-%02d-%02d %02d:%02d:%02.5f', $year, $month, $day, $hour, $minute, $second);
-		if (!checkdate($month, $day, $year) || $hour < 0 || $hour > 23 || $minute < 0 || $minute > 59 || $second < 0 || $second >= 60) {
+	public static function fromParts(
+		int $year,
+		int $month,
+		int $day,
+		int $hour = 0,
+		int $minute = 0,
+		float $second = 0.0
+	) {
+		$s = sprintf('%04d-%02d-%02d %02d:%02d:%02.5F', $year, $month, $day, $hour, $minute, $second);
+		if (
+			!checkdate($month, $day, $year)
+			|| $hour < 0
+			|| $hour > 23
+			|| $minute < 0
+			|| $minute > 59
+			|| $second < 0
+			|| $second >= 60
+		) {
 			throw new Nette\InvalidArgumentException("Invalid date '$s'");
 		}
+
 		return new static($s);
 	}
 
@@ -83,6 +99,7 @@ class DateTime extends \DateTime implements \JsonSerializable
 	 * @param  string|\DateTimeZone  $timezone (default timezone is used if null is passed)
 	 * @return static|false
 	 */
+	#[\ReturnTypeWillChange]
 	public static function createFromFormat($format, $time, $timezone = null)
 	{
 		if ($timezone === null) {

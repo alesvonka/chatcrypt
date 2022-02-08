@@ -15,7 +15,7 @@ use Nette;
 /**
  * The router broker.
  */
-class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRouter, \ArrayAccess, \Countable, \IteratorAggregate
+class RouteList extends Nette\Routing\RouteList implements Nette\Routing\Router, \ArrayAccess, \Countable, \IteratorAggregate
 {
 	private const PRESENTER_KEY = 'presenter';
 
@@ -23,7 +23,7 @@ class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRo
 	private $module;
 
 
-	public function __construct(string $module = null)
+	public function __construct(?string $module = null)
 	{
 		parent::__construct();
 		$this->module = $module ? $module . ':' : null;
@@ -41,6 +41,7 @@ class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRo
 		if (is_string($presenter) && strncmp($presenter, 'Nette:', 6)) {
 			$params[self::PRESENTER_KEY] = $this->module . $presenter;
 		}
+
 		return $params;
 	}
 
@@ -51,11 +52,11 @@ class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRo
 	public function constructUrl(array $params, Nette\Http\UrlScript $refUrl): ?string
 	{
 		if ($this->module) {
-			if (strncmp($params[self::PRESENTER_KEY], $this->module, strlen($this->module)) === 0) {
-				$params[self::PRESENTER_KEY] = substr($params[self::PRESENTER_KEY], strlen($this->module));
-			} else {
+			if (strncmp($params[self::PRESENTER_KEY], $this->module, strlen($this->module)) !== 0) {
 				return null;
 			}
+
+			$params[self::PRESENTER_KEY] = substr($params[self::PRESENTER_KEY], strlen($this->module));
 		}
 
 		return parent::constructUrl($params, $refUrl);
@@ -93,8 +94,10 @@ class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRo
 	}
 
 
+	/** @deprecated */
 	public function count(): int
 	{
+		trigger_error(__METHOD__ . '() is deprecated.', E_USER_DEPRECATED);
 		return count($this->getRouters());
 	}
 
@@ -118,11 +121,13 @@ class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRo
 	 * @return mixed
 	 * @throws Nette\OutOfRangeException
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetGet($index)
 	{
 		if (!$this->offsetExists($index)) {
 			throw new Nette\OutOfRangeException('Offset invalid or out of range');
 		}
+
 		return $this->getRouters()[$index];
 	}
 
@@ -132,7 +137,7 @@ class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRo
 	 */
 	public function offsetExists($index): bool
 	{
-		return is_int($index) && $index >= 0 && $index < $this->count();
+		return is_int($index) && $index >= 0 && $index < count($this->getRouters());
 	}
 
 
@@ -145,12 +150,18 @@ class RouteList extends Nette\Routing\RouteList implements Nette\Application\IRo
 		if (!$this->offsetExists($index)) {
 			throw new Nette\OutOfRangeException('Offset invalid or out of range');
 		}
+
 		$this->modify($index, null);
 	}
 
 
+	/** @deprecated */
 	public function getIterator(): \ArrayIterator
 	{
+		trigger_error(__METHOD__ . '() is deprecated, use getRouters().', E_USER_DEPRECATED);
 		return new \ArrayIterator($this->getRouters());
 	}
 }
+
+
+interface_exists(Nette\Application\IRouter::class);

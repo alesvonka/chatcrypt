@@ -2,7 +2,7 @@
 ================================================================
 
 [![Downloads this Month](https://img.shields.io/packagist/dm/nette/tester.svg)](https://packagist.org/packages/nette/tester)
-[![Build Status](https://travis-ci.org/nette/tester.svg?branch=master)](https://travis-ci.org/nette/tester)
+[![Tests](https://github.com/nette/tester/workflows/Tests/badge.svg?branch=master)](https://github.com/nette/tester/actions)
 [![Build Status Windows](https://ci.appveyor.com/api/projects/status/github/nette/tester?branch=master&svg=true)](https://ci.appveyor.com/project/dg/tester/branch/master)
 [![Latest Stable Version](https://poser.pugx.org/nette/tester/v/stable)](https://github.com/nette/tester/releases)
 [![License](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://github.com/nette/tester/blob/master/license.md)
@@ -17,7 +17,15 @@ the [Nette Framework](https://nette.org) and is capable of testing any PHP code.
 Documentation is available on the [Nette Tester website](https://tester.nette.org).
 Read the [blog](https://blog.nette.org/category/tester/) for new information.
 
-If you like Nette, **[please make a donation now](https://nette.org/donate)**. Thank you!
+
+[Support Tester](https://github.com/sponsors/dg)
+--------------------------------------------
+
+Do you like Nette Tester? Are you looking forward to the new features?
+
+[![Buy me a coffee](https://files.nette.org/icons/donation-3.svg)](https://github.com/sponsors/dg)
+
+Thank you!
 
 
 Installation
@@ -31,7 +39,8 @@ composer require nette/tester --dev
 
 Alternatively, you can download the [tester.phar](https://github.com/nette/tester/releases) file.
 
-- Nette Tester 2.3 is compatible with PHP 7.1 to 7.4
+- Nette Tester 2.4 is compatible with PHP 7.2 to 8.1
+- Nette Tester 2.3 is compatible with PHP 7.1 to 8.0
 - Nette Tester 2.1 & 2.2 is compatible with PHP 7.1 to 7.3
 - Nette Tester 2.0 is compatible with PHP 5.6 to 7.3
 
@@ -77,7 +86,7 @@ Now we run tests from command-line using the `tester` command:
 > tester
  _____ ___  ___ _____ ___  ___
 |_   _/ __)( __/_   _/ __)| _ )
-  |_| \___ /___) |_| \___ |_|_\  v2.3.3
+  |_| \___ /___) |_| \___ |_|_\  v2.4.1
 
 PHP 7.3.3 | php -n | 8 threads
 .
@@ -203,7 +212,7 @@ at the command-line options:
 > tester
 
 Usage:
-    tester.php [options] [<test file> | <directory>]...
+    tester [options] [<test file> | <directory>]...
 
 Options:
     -p <path>                    Specify PHP interpreter to run (default: php).

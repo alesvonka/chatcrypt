@@ -15,7 +15,7 @@ use Nette;
 /**
  * JSON response used mainly for AJAX requests.
  */
-final class JsonResponse implements Nette\Application\IResponse
+final class JsonResponse implements Nette\Application\Response
 {
 	use Nette\SmartObject;
 
@@ -26,7 +26,7 @@ final class JsonResponse implements Nette\Application\IResponse
 	private $contentType;
 
 
-	public function __construct($payload, string $contentType = null)
+	public function __construct($payload, ?string $contentType = null)
 	{
 		$this->payload = $payload;
 		$this->contentType = $contentType ?: 'application/json';

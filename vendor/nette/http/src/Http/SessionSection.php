@@ -28,12 +28,6 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	/** @var string */
 	private $name;
 
-	/** @var array|null  session data storage */
-	private $data;
-
-	/** @var array|bool  session metadata storage */
-	private $meta = false;
-
 
 	/**
 	 * Do not call directly. Use Session::getSection().
@@ -45,23 +39,65 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	}
 
 
-	private function start(): void
-	{
-		if ($this->meta === false) {
-			$this->session->start();
-			$this->data = &$_SESSION['__NF']['DATA'][$this->name];
-			$this->meta = &$_SESSION['__NF']['META'][$this->name];
-		}
-	}
-
-
 	/**
 	 * Returns an iterator over all section variables.
 	 */
 	public function getIterator(): \Iterator
 	{
-		$this->start();
-		return new \ArrayIterator($this->data ?? []);
+		$this->session->autoStart(false);
+		return new \ArrayIterator($this->getData() ?? []);
+	}
+
+
+	/**
+	 * Sets a variable in this session section.
+	 * @param  mixed  $value
+	 */
+	public function set(string $name, $value, string $expiration = null): void
+	{
+		if ($value === null) {
+			$this->remove($name);
+		} else {
+			$this->session->autoStart(true);
+			$this->getData()[$name] = $value;
+			$this->setExpiration($expiration, $name);
+		}
+	}
+
+
+	/**
+	 * Gets a variable from this session section.
+	 * @return mixed
+	 */
+	public function get(string $name)
+	{
+		if (func_num_args() > 1) {
+			throw new \ArgumentCountError(__METHOD__ . '() expects 1 arguments, given more.');
+		}
+		$this->session->autoStart(false);
+		return $this->getData()[$name] ?? null;
+	}
+
+
+	/**
+	 * Removes a variable or whole section.
+	 * @param  string|string[]|null  $name
+	 */
+	public function remove($name = null): void
+	{
+		$this->session->autoStart(false);
+		if (func_num_args() > 1) {
+			throw new \ArgumentCountError(__METHOD__ . '() expects at most 1 arguments, given more.');
+
+		} elseif (func_num_args()) {
+			$data = &$this->getData();
+			$meta = &$this->getMeta();
+			foreach ((array) $name as $name) {
+				unset($data[$name], $meta[$name]);
+			}
+		} else {
+			unset($_SESSION['__NF']['DATA'][$this->name], $_SESSION['__NF']['META'][$this->name]);
+		}
 	}
 
 
@@ -70,8 +106,8 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	 */
 	public function __set(string $name, $value): void
 	{
-		$this->start();
-		$this->data[$name] = $value;
+		$this->session->autoStart(true);
+		$this->getData()[$name] = $value;
 	}
 
 
@@ -81,12 +117,13 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	 */
 	public function &__get(string $name)
 	{
-		$this->start();
-		if ($this->warnOnUndefined && !array_key_exists($name, $this->data)) {
+		$this->session->autoStart(true);
+		$data = &$this->getData();
+		if ($this->warnOnUndefined && !array_key_exists($name, $data ?? [])) {
 			trigger_error("The variable '$name' does not exist in session section");
 		}
 
-		return $this->data[$name];
+		return $data[$name];
 	}
 
 
@@ -95,10 +132,8 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	 */
 	public function __isset(string $name): bool
 	{
-		if ($this->session->exists()) {
-			$this->start();
-		}
-		return isset($this->data[$name]);
+		$this->session->autoStart(false);
+		return isset($this->getData()[$name]);
 	}
 
 
@@ -107,8 +142,7 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	 */
 	public function __unset(string $name): void
 	{
-		$this->start();
-		unset($this->data[$name], $this->meta[$name]);
+		$this->remove($name);
 	}
 
 
@@ -121,13 +155,14 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	}
 
 
+	#[\ReturnTypeWillChange]
 	/**
 	 * Gets a variable from this session section.
 	 * @return mixed
 	 */
 	public function offsetGet($name)
 	{
-		return $this->__get($name);
+		return $this->get($name);
 	}
 
 
@@ -145,29 +180,33 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 	 */
 	public function offsetUnset($name): void
 	{
-		$this->__unset($name);
+		$this->remove($name);
 	}
 
 
 	/**
 	 * Sets the expiration of the section or specific variables.
 	 * @param  ?string  $time
-	 * @param  string|string[]  $variables  list of variables / single variable to expire
+	 * @param  string|string[]|null  $variables  list of variables / single variable to expire
 	 * @return static
 	 */
 	public function setExpiration($time, $variables = null)
 	{
-		$this->start();
+		$this->session->autoStart((bool) $time);
+		$meta = &$this->getMeta();
 		if ($time) {
 			$time = Nette\Utils\DateTime::from($time)->format('U');
 			$max = (int) ini_get('session.gc_maxlifetime');
-			if ($max !== 0 && ($time - time() > $max + 3)) { // 0 - unlimited in memcache handler, 3 - bulgarian constant
+			if (
+				$max !== 0 // 0 - unlimited in memcache handler
+				&& ($time - time() > $max + 3) // 3 - bulgarian constant
+			) {
 				trigger_error("The expiration time is greater than the session expiration $max seconds");
 			}
 		}
 
 		foreach (is_array($variables) ? $variables : [$variables] as $variable) {
-			$this->meta[$variable]['T'] = $time ?: null;
+			$meta[$variable]['T'] = $time ?: null;
 		}
 		return $this;
 	}
@@ -175,24 +214,22 @@ class SessionSection implements \IteratorAggregate, \ArrayAccess
 
 	/**
 	 * Removes the expiration from the section or specific variables.
-	 * @param  string|string[]  $variables  list of variables / single variable to expire
+	 * @param  string|string[]|null  $variables  list of variables / single variable to expire
 	 */
 	public function removeExpiration($variables = null): void
 	{
-		$this->start();
-		foreach (is_array($variables) ? $variables : [$variables] as $variable) {
-			unset($this->meta[$variable]['T']);
-		}
+		$this->setExpiration(null, $variables);
 	}
 
 
-	/**
-	 * Cancels the current session section.
-	 */
-	public function remove(): void
+	private function &getData()
 	{
-		$this->start();
-		$this->data = null;
-		$this->meta = null;
+		return $_SESSION['__NF']['DATA'][$this->name];
+	}
+
+
+	private function &getMeta()
+	{
+		return $_SESSION['__NF']['META'][$this->name];
 	}
 }

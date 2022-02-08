@@ -37,8 +37,11 @@ final class MicroPresenter implements Application\IPresenter
 	private $request;
 
 
-	public function __construct(Nette\DI\Container $context = null, Http\IRequest $httpRequest = null, Router $router = null)
-	{
+	public function __construct(
+		?Nette\DI\Container $context = null,
+		?Http\IRequest $httpRequest = null,
+		?Router $router = null
+	) {
 		$this->context = $context;
 		$this->httpRequest = $httpRequest;
 		$this->router = $router;
@@ -54,11 +57,16 @@ final class MicroPresenter implements Application\IPresenter
 	}
 
 
-	public function run(Application\Request $request): Application\IResponse
+	public function run(Application\Request $request): Application\Response
 	{
 		$this->request = $request;
 
-		if ($this->httpRequest && $this->router && !$this->httpRequest->isAjax() && ($request->isMethod('get') || $request->isMethod('head'))) {
+		if (
+			$this->httpRequest
+			&& $this->router
+			&& !$this->httpRequest->isAjax()
+			&& ($request->isMethod('get') || $request->isMethod('head'))
+		) {
 			$refUrl = $this->httpRequest->getUrl()->withoutUserInfo();
 			$url = $this->router->constructUrl($request->toArray(), $refUrl);
 			if ($url !== null && !$refUrl->isEqual($url)) {
@@ -68,18 +76,20 @@ final class MicroPresenter implements Application\IPresenter
 
 		$params = $request->getParameters();
 		$callback = $params['callback'] ?? null;
-		if (!$callback instanceof \Closure) {
-			throw new Nette\InvalidStateException('Parameter callback is not a valid closure.');
+		if (!is_object($callback) || !is_callable($callback)) {
+			throw new Application\BadRequestException('Parameter callback is not a valid closure.');
 		}
-		$reflection = new \ReflectionFunction($callback);
+
+		$reflection = Nette\Utils\Callback::toReflection($callback);
 
 		if ($this->context) {
 			foreach ($reflection->getParameters() as $param) {
-				if ($param->getClass()) {
-					$params[$param->getName()] = $this->context->getByType($param->getClass()->getName(), false);
+				if ($param->getType()) {
+					$params[$param->getName()] = $this->context->getByType($param->getType()->getName(), false);
 				}
 			}
 		}
+
 		$params['presenter'] = $this;
 		try {
 			$params = Application\UI\ComponentReflection::combineArgs($reflection, $params);
@@ -92,15 +102,18 @@ final class MicroPresenter implements Application\IPresenter
 		if (is_string($response)) {
 			$response = [$response, []];
 		}
+
 		if (is_array($response)) {
 			[$templateSource, $templateParams] = $response;
 			$response = $this->createTemplate()->setParameters($templateParams);
 			if (!$templateSource instanceof \SplFileInfo) {
 				$response->getLatte()->setLoader(new Latte\Loaders\StringLoader);
 			}
+
 			$response->setFile((string) $templateSource);
 		}
-		if ($response instanceof Application\UI\ITemplate) {
+
+		if ($response instanceof Application\UI\Template) {
 			return new Responses\TextResponse($response);
 		} else {
 			return $response ?: new Responses\VoidResponse;
@@ -111,10 +124,14 @@ final class MicroPresenter implements Application\IPresenter
 	/**
 	 * Template factory.
 	 */
-	public function createTemplate(string $class = null, callable $latteFactory = null): Application\UI\ITemplate
+	public function createTemplate(?string $class = null, ?callable $latteFactory = null): Application\UI\Template
 	{
-		$latte = $latteFactory ? $latteFactory() : $this->getContext()->getByType(Nette\Bridges\ApplicationLatte\ILatteFactory::class)->create();
-		$template = $class ? new $class : new Nette\Bridges\ApplicationLatte\Template($latte);
+		$latte = $latteFactory
+			? $latteFactory()
+			: $this->getContext()->getByType(Nette\Bridges\ApplicationLatte\LatteFactory::class)->create();
+		$template = $class
+			? new $class
+			: new Nette\Bridges\ApplicationLatte\DefaultTemplate($latte);
 
 		$template->setParameters($this->request->getParameters());
 		$template->presenter = $this;
@@ -124,6 +141,7 @@ final class MicroPresenter implements Application\IPresenter
 			$template->baseUrl = rtrim($url->getBaseUrl(), '/');
 			$template->basePath = rtrim($url->getBasePath(), '/');
 		}
+
 		return $template;
 	}
 

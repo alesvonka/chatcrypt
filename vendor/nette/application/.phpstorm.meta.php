@@ -57,6 +57,7 @@ expectedReturnValues(\Nette\Application\BadRequestException::getHttpCode(), argu
 
 exitPoint(\Nette\Application\UI\Component::redirect());
 exitPoint(\Nette\Application\UI\Component::redirectPermanent());
+exitPoint(\Nette\Application\UI\Component::error());
 exitPoint(\Nette\Application\UI\Presenter::forward());
 exitPoint(\Nette\Application\UI\Presenter::redirectUrl());
 exitPoint(\Nette\Application\UI\Presenter::sendJson());
@@ -64,3 +65,5 @@ exitPoint(\Nette\Application\UI\Presenter::sendPayload());
 exitPoint(\Nette\Application\UI\Presenter::sendResponse());
 exitPoint(\Nette\Application\UI\Presenter::sendTemplate());
 exitPoint(\Nette\Application\UI\Presenter::terminate());
+
+override(\Nette\Application\UI\Control::createTemplate(0), map(['' => '@']));

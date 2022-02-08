@@ -12,6 +12,7 @@ namespace Nette\Neon;
 
 /**
  * Simple parser & generator for Nette Object Notation.
+ * @see https://ne-on.org
  */
 final class Neon
 {
@@ -21,22 +22,41 @@ final class Neon
 
 
 	/**
-	 * Returns the NEON representation of a value.
+	 * Returns value converted to NEON.
 	 */
-	public static function encode($var, int $flags = 0): string
+	public static function encode($value, bool $blockMode = false, string $indentation = "\t"): string
 	{
 		$encoder = new Encoder;
-		return $encoder->encode($var, $flags);
+		$encoder->blockMode = $blockMode;
+		$encoder->indentation = $indentation;
+		return $encoder->encode($value);
 	}
 
 
 	/**
-	 * Decodes a NEON string.
+	 * Converts given NEON to PHP value.
 	 * @return mixed
 	 */
 	public static function decode(string $input)
 	{
 		$decoder = new Decoder;
 		return $decoder->decode($input);
+	}
+
+
+	/**
+	 * Converts given NEON file to PHP value.
+	 * @return mixed
+	 */
+	public static function decodeFile(string $file)
+	{
+		if (!is_file($file)) {
+			throw new Exception("File '$file' does not exist.");
+		}
+		$input = file_get_contents($file);
+		if (substr($input, 0, 3) === "\u{FEFF}") { // BOM
+			$input = substr($input, 3);
+		}
+		return self::decode($input);
 	}
 }

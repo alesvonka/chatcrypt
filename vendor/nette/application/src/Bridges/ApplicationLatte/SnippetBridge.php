@@ -12,7 +12,7 @@ namespace Nette\Bridges\ApplicationLatte;
 use Latte\Runtime\ISnippetBridge;
 use Nette;
 use Nette\Application\UI\Control;
-use Nette\Application\UI\IRenderable;
+use Nette\Application\UI\Renderable;
 
 
 /**
@@ -72,6 +72,7 @@ class SnippetBridge implements ISnippetBridge
 		if ($this->payload === null) {
 			$this->payload = $this->control->getPresenter()->getPayload();
 		}
+
 		$this->payload->snippets[$this->control->getSnippetId($name)] = $content;
 	}
 
@@ -81,7 +82,7 @@ class SnippetBridge implements ISnippetBridge
 		$queue = [$this->control];
 		do {
 			foreach (array_shift($queue)->getComponents() as $child) {
-				if ($child instanceof IRenderable) {
+				if ($child instanceof Renderable) {
 					if ($child->isControlInvalid()) {
 						$child->snippetMode = true;
 						$child->render();

@@ -2,20 +2,30 @@
 ================================================
 
 [![Downloads this Month](https://img.shields.io/packagist/dm/nette/neon.svg)](https://packagist.org/packages/nette/neon)
-[![Build Status](https://travis-ci.org/nette/neon.svg?branch=master)](https://travis-ci.org/nette/neon)
+[![Tests](https://github.com/nette/neon/workflows/Tests/badge.svg?branch=master)](https://github.com/nette/neon/actions)
 [![Coverage Status](https://coveralls.io/repos/github/nette/neon/badge.svg?branch=master)](https://coveralls.io/github/nette/neon?branch=master)
 [![Latest Stable Version](https://poser.pugx.org/nette/neon/v/stable)](https://github.com/nette/neon/releases)
 [![License](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://github.com/nette/neon/blob/master/license.md)
 
 
 Introduction
-------------
+============
 
 NEON is a human-readable structured data format. In Nette, it is used for configuration files. It is also used for structured data such as settings, language translations, etc. [Try it on the sandbox](https://ne-on.org).
 
-NEON stands for *Nette Object Notation*. It is less complex and ungainly than XML or JSON, but provides similar capabilities. It is very similar to YAML. The main advantage is that NEON has so-called [entities](#entities), thanks to which the configuration of DI services is so sexy. And allowes tabs for indentation.
+NEON stands for *Nette Object Notation*. It is less complex and ungainly than XML or JSON, but provides similar capabilities. It is very similar to YAML. The main advantage is that NEON has so-called [entities](#entities), thanks to which the configuration of DI services is so sexy. And allows tabs for indentation.
 
 NEON is built from the ground up to be simple to use.
+
+
+[Support Neon](https://github.com/sponsors/dg)
+----------------------------------------------
+
+Do you like NEON? Are you looking forward to the new features?
+
+[![Buy me a coffee](https://files.nette.org/icons/donation-3.svg)](https://github.com/sponsors/dg)
+
+Thank you!
 
 
 Usage
@@ -27,15 +37,15 @@ Install via Composer:
 composer require nette/neon
 ```
 
-It requires PHP version 7.1 and supports PHP up to 7.4. Documentation can be found on the [website](https://doc.nette.org/neon).
+It requires PHP version 7.1 and supports PHP up to 8.1. Documentation can be found on the [website](https://doc.nette.org/neon).
 
-`Neon::encode()` returns `$value` converted to NEON. As the second parameter you can use `Neon::BLOCK`, which will create multiline output.
+`Neon::encode()` returns `$value` converted to NEON. As the second parameter `$blockMode` you can pass true, which will create multiline output. The third parameter `$indentation` specifies the characters used for indentation (default is tab).
 
 ```php
 use Nette\Neon\Neon;
 
 $neon = Neon::encode($value); // Returns $value converted to NEON
-$neon = Neon::encode($value, Neon::BLOCK); // Returns $value converted to multiline NEON
+$neon = Neon::encode($value, true); // Returns $value converted to multiline NEON
 ```
 
 `Neon::decode()` converts given NEON to PHP value:
@@ -44,7 +54,13 @@ $neon = Neon::encode($value, Neon::BLOCK); // Returns $value converted to multil
 $value = Neon::decode('hello: world'); // Returns an array ['hello' => 'world']
 ```
 
-Both methods throw `Nette\Neon\Exception` on error.
+`Neon::decodeFile()` converts given NEON file to PHP value:
+
+```php
+$value = Neon::decodeFile('config.neon');
+```
+
+All methods throw `Nette\Neon\Exception` on error.
 
 
 Integration
@@ -61,6 +77,12 @@ Integration
 - [NEON for JavaScript](https://github.com/matej21/neon-js)
 - [NEON for Python](https://github.com/paveldedik/neon-py).
 
+
+You can check for syntax errors in Neon files using the `neon-lint` console command:
+
+```shell
+vendor/bin/neon-lint <path>
+```
 
 Syntax
 ======
@@ -233,7 +255,7 @@ If the string contains characters that can be confused with NEON syntax (hyphens
 Double quotes allow you to use escape sequences to write special characters using backslashes `\`. All escape sequences as in the JSON format are supported, plus `\_`, which is an non-breaking space, ie `\u00A0`.
 
 ```neon
-- "\t \n \r \f \b \" \' \\ \/ \_"
+- "\t \n \r \f \b \" \\ \/ \_"
 - "\u00A9"
 ```
 

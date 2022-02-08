@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Nette\DI\Extensions;
 
 use Nette;
+use Tracy;
 
 
 /**
@@ -36,24 +37,28 @@ final class DIExtension extends Nette\DI\CompilerExtension
 		$this->time = microtime(true);
 
 		$this->config = new class {
-			/** @var bool */
+			/** @var ?bool */
 			public $debugger;
+
 			/** @var string[] */
 			public $excluded = [];
+
 			/** @var ?string */
 			public $parentClass;
+
 			/** @var object */
 			public $export;
 		};
 		$this->config->export = new class {
 			/** @var bool */
 			public $parameters = true;
+
 			/** @var string[]|bool|null */
 			public $tags = true;
+
 			/** @var string[]|bool|null */
 			public $types = true;
 		};
-		$this->config->debugger = interface_exists(\Tracy\IBarPanel::class);
 	}
 
 
@@ -81,7 +86,10 @@ final class DIExtension extends Nette\DI\CompilerExtension
 		$this->restrictTags($class);
 		$this->restrictTypes($class);
 
-		if ($this->debugMode && $this->config->debugger) {
+		if (
+			$this->debugMode &&
+			($this->config->debugger ?? $this->getContainerBuilder()->getByType(Tracy\Bar::class))
+		) {
 			$this->enableTracyIntegration();
 		}
 
@@ -96,7 +104,7 @@ final class DIExtension extends Nette\DI\CompilerExtension
 		} elseif ($option === false) {
 			$class->removeProperty('tags');
 		} elseif ($prop = $class->getProperties()['tags'] ?? null) {
-			$prop->value = array_intersect_key($prop->value, $this->exportedTags + array_flip((array) $option));
+			$prop->setValue(array_intersect_key($prop->getValue(), $this->exportedTags + array_flip((array) $option)));
 		}
 	}
 
@@ -107,11 +115,12 @@ final class DIExtension extends Nette\DI\CompilerExtension
 		if ($option === true) {
 			return;
 		}
+
 		$prop = $class->getProperty('wiring');
-		$prop->value = array_intersect_key(
-			$prop->value,
+		$prop->setValue(array_intersect_key(
+			$prop->getValue(),
 			$this->exportedTypes + (is_array($option) ? array_flip($option) : [])
-		);
+		));
 	}
 
 

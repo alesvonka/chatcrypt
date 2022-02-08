@@ -57,8 +57,10 @@ final class Helpers
 
 	public static function getPropertyType(\ReflectionProperty $prop): ?string
 	{
-		if ($type = Reflection::getPropertyType($prop)) {
-			return ($prop->getType()->allowsNull() ? '?' : '') . $type;
+		if (!class_exists(Nette\Utils\Type::class)) {
+			throw new Nette\NotSupportedException('Expect::from() requires nette/utils 3.x');
+		} elseif ($type = Nette\Utils\Type::fromReflection($prop)) {
+			return (string) $type;
 		} elseif ($type = preg_replace('#\s.*#', '', (string) self::parseAnnotation($prop, 'var'))) {
 			$class = Reflection::getPropertyDeclaringClass($prop);
 			return preg_replace_callback('#[\w\\\\]+#', function ($m) use ($class) {
@@ -83,5 +85,22 @@ final class Helpers
 			return $m[1] ?? '';
 		}
 		return null;
+	}
+
+
+	/**
+	 * @param  mixed  $value
+	 */
+	public static function formatValue($value): string
+	{
+		if (is_object($value)) {
+			return 'object ' . get_class($value);
+		} elseif (is_string($value)) {
+			return "'" . Nette\Utils\Strings::truncate($value, 15, '...') . "'";
+		} elseif (is_scalar($value)) {
+			return var_export($value, true);
+		} else {
+			return strtolower(gettype($value));
+		}
 	}
 }

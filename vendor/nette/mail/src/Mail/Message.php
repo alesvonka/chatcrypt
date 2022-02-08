@@ -189,7 +189,8 @@ class Message extends MimePart
 	 */
 	public function getPriority(): ?int
 	{
-		return $this->getHeader('X-Priority');
+		$priority = $this->getHeader('X-Priority');
+		return is_numeric($priority) ? (int) $priority : null;
 	}
 
 
@@ -218,9 +219,11 @@ class Message extends MimePart
 				if (!isset($cids[$file])) {
 					$cids[$file] = substr($this->addEmbeddedFile($file)->getHeader('Content-ID'), 1, -1);
 				}
-				$html = substr_replace($html,
+				$html = substr_replace(
+					$html,
 					"{$m[1][0]}{$m[2][0]}cid:{$cids[$file]}",
-					$m[0][1], strlen($m[0][0])
+					$m[0][1],
+					strlen($m[0][0])
 				);
 			}
 		}
@@ -293,11 +296,16 @@ class Message extends MimePart
 	/**
 	 * Creates file MIME part.
 	 */
-	private function createAttachment(string $file, ?string $content, ?string $contentType, string $disposition): MimePart
-	{
+	private function createAttachment(
+		string $file,
+		?string $content,
+		?string $contentType,
+		string $disposition
+	): MimePart {
 		$part = new MimePart;
 		if ($content === null) {
 			$content = Nette\Utils\FileSystem::read($file);
+			$file = Strings::fixEncoding(basename($file));
 		}
 		if (!$contentType) {
 			$contentType = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $content);
@@ -311,7 +319,7 @@ class Message extends MimePart
 		$part->setBody($content);
 		$part->setContentType($contentType);
 		$part->setEncoding(preg_match('#(multipart|message)/#A', $contentType) ? self::ENCODING_8BIT : self::ENCODING_BASE64);
-		$part->setHeader('Content-Disposition', $disposition . '; filename="' . Strings::fixEncoding(basename($file)) . '"');
+		$part->setHeader('Content-Disposition', $disposition . '; filename="' . addcslashes($file, '"\\') . '"');
 		return $part;
 	}
 
@@ -335,7 +343,7 @@ class Message extends MimePart
 	public function build()
 	{
 		$mail = clone $this;
-		$mail->setHeader('Message-ID', $this->getRandomId());
+		$mail->setHeader('Message-ID', $mail->getHeader('Message-ID') ?? $this->getRandomId());
 
 		$cursor = $mail;
 		if ($mail->attachments) {
@@ -390,6 +398,7 @@ class Message extends MimePart
 		]);
 		$text = Nette\Utils\Html::htmlToText($html);
 		$text = Strings::replace($text, '#[ \t]+#', ' ');
+		$text = implode("\n", array_map('trim', explode("\n", $text)));
 		return trim($text);
 	}
 

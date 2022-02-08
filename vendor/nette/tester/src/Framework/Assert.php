@@ -40,6 +40,9 @@ class Assert
 		'%(\[.+\][+*?{},\d]*)%' => '$1', // range
 	];
 
+	/** @var bool expand patterns in match() and matchFile() */
+	public static $expandPatterns = true;
+
 	/** @var callable  function (AssertException $exception): void */
 	public static $onFailure;
 
@@ -103,6 +106,8 @@ class Assert
 
 	/**
 	 * Asserts that a haystack (string or array) contains an expected needle.
+	 * @param  mixed  $needle
+	 * @param  array|string  $actual
 	 */
 	public static function contains($needle, $actual, string $description = null): void
 	{
@@ -112,7 +117,10 @@ class Assert
 				self::fail(self::describe('%1 should contain %2', $description), $actual, $needle);
 			}
 		} elseif (is_string($actual)) {
-			if ($needle !== '' && strpos($actual, $needle) === false) {
+			if (!is_string($needle)) {
+				self::fail(self::describe('Needle %1 should be string'), $needle);
+
+			} elseif ($needle !== '' && strpos($actual, $needle) === false) {
 				self::fail(self::describe('%1 should contain %2', $description), $actual, $needle);
 			}
 		} else {
@@ -123,6 +131,8 @@ class Assert
 
 	/**
 	 * Asserts that a haystack (string or array) does not contain an expected needle.
+	 * @param  mixed  $needle
+	 * @param  array|string  $actual
 	 */
 	public static function notContains($needle, $actual, string $description = null): void
 	{
@@ -132,11 +142,46 @@ class Assert
 				self::fail(self::describe('%1 should not contain %2', $description), $actual, $needle);
 			}
 		} elseif (is_string($actual)) {
-			if ($needle === '' || strpos($actual, $needle) !== false) {
+			if (!is_string($needle)) {
+				self::fail(self::describe('Needle %1 should be string'), $needle);
+
+			} elseif ($needle === '' || strpos($actual, $needle) !== false) {
 				self::fail(self::describe('%1 should not contain %2', $description), $actual, $needle);
 			}
 		} else {
 			self::fail(self::describe('%1 should be string or array', $description), $actual);
+		}
+	}
+
+
+	/**
+	 * Asserts that a haystack has an expected key.
+	 * @param  string|int  $key
+	 */
+	public static function hasKey($key, array $actual, string $description = null): void
+	{
+		self::$counter++;
+		if (!is_int($key) && !is_string($key)) {
+			self::fail(self::describe('Key %1 should be string or integer'), $key);
+
+		} elseif (!array_key_exists($key, $actual)) {
+			self::fail(self::describe('%1 should contain key %2', $description), $actual, $key);
+		}
+	}
+
+
+	/**
+	 * Asserts that a haystack doesn't have an expected key.
+	 * @param  string|int  $key
+	 */
+	public static function hasNotKey($key, array $actual, string $description = null): void
+	{
+		self::$counter++;
+		if (!is_int($key) && !is_string($key)) {
+			self::fail(self::describe('Key %1 should be string or integer'), $key);
+
+		} elseif (array_key_exists($key, $actual)) {
+			self::fail(self::describe('%1 should not contain key %2', $description), $actual, $key);
 		}
 	}
 
@@ -234,7 +279,7 @@ class Assert
 
 	/**
 	 * Asserts the number of items in an array or Countable.
-	 * @param  mixed  $value
+	 * @param  array|\Countable  $value
 	 */
 	public static function count(int $count, $value, string $description = null): void
 	{
@@ -273,6 +318,7 @@ class Assert
 
 		} elseif (!$value instanceof $type) {
 			$actual = is_object($value) ? get_class($value) : gettype($value);
+			$type = is_object($type) ? get_class($type) : $type;
 			self::fail(self::describe("$actual should be instance of $type", $description));
 		}
 	}
@@ -281,8 +327,12 @@ class Assert
 	/**
 	 * Asserts that a function throws exception of given type and its message matches given pattern.
 	 */
-	public static function exception(callable $function, string $class, string $message = null, $code = null): ?\Throwable
-	{
+	public static function exception(
+		callable $function,
+		string $class,
+		string $message = null,
+		$code = null
+	): ?\Throwable {
 		self::$counter++;
 		$e = null;
 		try {
@@ -412,7 +462,9 @@ class Assert
 			self::fail(self::describe('%1 should match %2', $description), $actual, $pattern);
 
 		} elseif (!self::isMatching($pattern, $actual)) {
-			[$pattern, $actual] = self::expandMatchingPatterns($pattern, $actual);
+			if (self::$expandPatterns) {
+				[$pattern, $actual] = self::expandMatchingPatterns($pattern, $actual);
+			}
 			self::fail(self::describe('%1 should match %2', $description), $actual, $pattern);
 		}
 	}
@@ -432,7 +484,9 @@ class Assert
 			self::fail(self::describe('%1 should match %2', $description), $actual, $pattern);
 
 		} elseif (!self::isMatching($pattern, $actual)) {
-			[$pattern, $actual] = self::expandMatchingPatterns($pattern, $actual);
+			if (self::$expandPatterns) {
+				[$pattern, $actual] = self::expandMatchingPatterns($pattern, $actual);
+			}
 			self::fail(self::describe('%1 should match %2', $description), $actual, $pattern);
 		}
 	}

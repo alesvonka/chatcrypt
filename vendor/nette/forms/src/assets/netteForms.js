@@ -1,4 +1,4 @@
-/**
+/**!
  * NetteForms - simple form validation.
  *
  * This file is part of the Nette Framework (https://nette.org)
@@ -34,7 +34,8 @@
 	var toggleListeners = new window.WeakMap();
 
 	Nette.formErrors = [];
-	Nette.version = '3.0';
+	Nette.version = '3.3.0';
+	Nette.invalidNumberMessage = 'Please enter a valid value.';
 
 
 	/**
@@ -137,6 +138,7 @@
 	 * Validates form element against given rules.
 	 */
 	Nette.validateControl = function(elem, rules, onlyCheck, value, emptyOptional) {
+		var top = !rules;
 		elem = elem.tagName ? elem : elem[0]; // RadioNodeList
 		rules = rules || JSON.parse(elem.getAttribute('data-nette-rules') || '[]');
 		value = value === undefined ? {value: Nette.getEffectiveValue(elem)} : value;
@@ -186,8 +188,8 @@
 		}
 
 		if (elem.type === 'number' && !elem.validity.valid) {
-			if (!onlyCheck) {
-				Nette.addError(elem, 'Please enter a valid value.');
+			if (top && !onlyCheck) {
+				Nette.addError(elem, Nette.invalidNumberMessage);
 			}
 			return false;
 		}
@@ -292,12 +294,46 @@
 		}
 
 		if (messages.length) {
-			alert(messages.join('\n'));
-
-			if (focusElem) {
-				focusElem.focus();
-			}
+			Nette.showModal(messages.join('\n'), function () {
+				if (focusElem) {
+					focusElem.focus();
+				}
+			});
 		}
+	};
+
+
+	/**
+	 * Display modal window.
+	 */
+	Nette.showModal = function(message, onclose) {
+		var dialog = document.createElement('dialog'),
+			ua = navigator.userAgentData;
+
+		if (ua && dialog.showModal
+			&& ua.brands.some(function(item) { return item.brand === 'Opera' || (item.brand === 'Chromium' && ua.mobile); })
+		) {
+			var style = document.createElement('style');
+			style.innerText = '.netteFormsModal { text-align: center; margin: auto; border: 2px solid black; padding: 1rem } .netteFormsModal button { padding: .1em 2em }';
+
+			var button = document.createElement('button');
+			button.innerText = 'OK';
+			button.onclick = function () {
+				dialog.remove();
+				onclose();
+			};
+
+			dialog.setAttribute('class', 'netteFormsModal');
+			dialog.innerText = message + '\n\n';
+			dialog.appendChild(style);
+			dialog.appendChild(button);
+			document.body.appendChild(dialog);
+			dialog.showModal();
+			return;
+		}
+
+		alert(message);
+		onclose();
 	};
 
 
@@ -350,13 +386,13 @@
 				return null;
 			}
 
-			function toString(val) {
+			var toString = function(val) {
 				if (typeof val === 'number' || typeof val === 'string') {
 					return '' + val;
 				} else {
 					return val === true ? '1' : '';
 				}
-			}
+			};
 
 			val = Array.isArray(val) ? val : [val];
 			arg = Array.isArray(arg) ? arg : [arg];
@@ -369,7 +405,7 @@
 				}
 				return false;
 			}
-			return true;
+			return val.length > 0;
 		},
 
 		notEqual: function(elem, arg, val) {
@@ -416,7 +452,7 @@
 
 		url: function(elem, arg, val, value) {
 			if (!(/^[a-z\d+.-]+:/).test(val)) {
-				val = 'http://' + val;
+				val = 'https://' + val;
 			}
 			if ((/^https?:\/\/((([-_0-9a-z\u00C0-\u02FF\u0370-\u1EFF]+\.)*[0-9a-z\u00C0-\u02FF\u0370-\u1EFF]([-0-9a-z\u00C0-\u02FF\u0370-\u1EFF]{0,61}[0-9a-z\u00C0-\u02FF\u0370-\u1EFF])?\.)?[a-z\u00C0-\u02FF\u0370-\u1EFF]([-0-9a-z\u00C0-\u02FF\u0370-\u1EFF]{0,17}[a-z\u00C0-\u02FF\u0370-\u1EFF])?|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[[0-9a-f:]{3,39}\])(:\d{1,5})?(\/\S*)?$/i).test(val)) {
 				value.value = val;
@@ -569,17 +605,17 @@
 	/**
 	 * Process all toggles in form.
 	 */
-	Nette.toggleForm = function(form, elem) {
+	Nette.toggleForm = function(form, event) {
 		var i;
 		formToggles = {};
 		for (i = 0; i < form.elements.length; i++) {
 			if (form.elements[i].tagName.toLowerCase() in {input: 1, select: 1, textarea: 1, button: 1}) {
-				Nette.toggleControl(form.elements[i], null, null, !elem);
+				Nette.toggleControl(form.elements[i], null, null, !event);
 			}
 		}
 
 		for (i in formToggles) {
-			Nette.toggle(i, formToggles[i], elem);
+			Nette.toggle(i, formToggles[i].state, formToggles[i].elem, event);
 		}
 	};
 
@@ -593,8 +629,8 @@
 		emptyOptional = emptyOptional === undefined ? !Nette.validateRule(elem, ':filled', null, value) : emptyOptional;
 
 		var has = false,
-			handler = function () {
-				Nette.toggleForm(elem.form, elem);
+			handler = function (e) {
+				Nette.toggleForm(elem.form, e);
 			},
 			curSuccess;
 
@@ -640,10 +676,9 @@
 						}
 					}
 				}
-				for (var id2 in rule.toggle || []) {
-					if (Object.prototype.hasOwnProperty.call(rule.toggle, id2)) {
-						formToggles[id2] = formToggles[id2] || (rule.toggle[id2] ? curSuccess : !curSuccess);
-					}
+				for (var toggleId in rule.toggle || []) {
+					formToggles[toggleId] = formToggles[toggleId] || {elem: elem};
+					formToggles[toggleId].state = formToggles[toggleId].state || (rule.toggle[toggleId] ? curSuccess : !curSuccess);
 				}
 			}
 		}
@@ -654,7 +689,7 @@
 	/**
 	 * Displays or hides HTML element.
 	 */
-	Nette.toggle = function(selector, visible, srcElement) { // eslint-disable-line no-unused-vars
+	Nette.toggle = function(selector, visible, srcElement, event) { // eslint-disable-line no-unused-vars
 		if (/^\w[\w.:-]*$/.test(selector)) { // id
 			selector = '#' + selector;
 		}

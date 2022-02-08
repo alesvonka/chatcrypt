@@ -34,7 +34,9 @@ class ContainerPanel implements Tracy\IBarPanel
 	public function __construct(Container $container)
 	{
 		$this->container = $container;
-		$this->elapsedTime = self::$compilationTime ? microtime(true) - self::$compilationTime : null;
+		$this->elapsedTime = self::$compilationTime
+			? microtime(true) - self::$compilationTime
+			: null;
 	}
 
 
@@ -63,8 +65,9 @@ class ContainerPanel implements Tracy\IBarPanel
 				$types[lcfirst(str_replace('__', '.', $m[1]))] = $method->getReturnType()->getName();
 			}
 		}
+
 		$types = $this->getContainerProperty('types') + $types;
-		ksort($types);
+		ksort($types, SORT_NATURAL);
 		foreach ($this->getContainerProperty('tags') as $tag => $tmp) {
 			foreach ($tmp as $service => $val) {
 				$tags[$service][$tag] = $val;

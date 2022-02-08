@@ -15,7 +15,7 @@ namespace Latte;
  */
 interface Macro
 {
-	const
+	public const
 		AUTO_EMPTY = 4,
 		AUTO_CLOSE = 64,
 		ALLOWED_IN_HEAD = 128,
@@ -29,7 +29,7 @@ interface Macro
 
 	/**
 	 * Finishes template parsing.
-	 * @return array|null [prolog, epilog]
+	 * @return array{string, string}|array{string}|null  (prolog, epilog)
 	 */
 	function finalize();
 

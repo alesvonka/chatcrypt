@@ -18,6 +18,8 @@ use Nette;
  * @property   int $page
  * @property-read int $firstPage
  * @property-read int|null $lastPage
+ * @property-read int $firstItemOnPage
+ * @property-read int $lastItemOnPage
  * @property   int $base
  * @property-read bool $first
  * @property-read bool $last
@@ -79,7 +81,29 @@ class Paginator
 	 */
 	public function getLastPage(): ?int
 	{
-		return $this->itemCount === null ? null : $this->base + max(0, $this->getPageCount() - 1);
+		return $this->itemCount === null
+			? null
+			: $this->base + max(0, $this->getPageCount() - 1);
+	}
+
+
+	/**
+	 * Returns the sequence number of the first element on the page
+	 */
+	public function getFirstItemOnPage(): int
+	{
+		return $this->itemCount !== 0
+			? $this->offset + 1
+			: 0;
+	}
+
+
+	/**
+	 * Returns the sequence number of the last element on the page
+	 */
+	public function getLastItemOnPage(): int
+	{
+		return $this->offset + $this->length;
 	}
 
 
@@ -109,7 +133,9 @@ class Paginator
 	protected function getPageIndex(): int
 	{
 		$index = max(0, $this->page - $this->base);
-		return $this->itemCount === null ? $index : min($index, max(0, $this->getPageCount() - 1));
+		return $this->itemCount === null
+			? $index
+			: min($index, max(0, $this->getPageCount() - 1));
 	}
 
 
@@ -127,7 +153,9 @@ class Paginator
 	 */
 	public function isLast(): bool
 	{
-		return $this->itemCount === null ? false : $this->getPageIndex() >= $this->getPageCount() - 1;
+		return $this->itemCount === null
+			? false
+			: $this->getPageIndex() >= $this->getPageCount() - 1;
 	}
 
 
@@ -136,7 +164,9 @@ class Paginator
 	 */
 	public function getPageCount(): ?int
 	{
-		return $this->itemCount === null ? null : (int) ceil($this->itemCount / $this->itemsPerPage);
+		return $this->itemCount === null
+			? null
+			: (int) ceil($this->itemCount / $this->itemsPerPage);
 	}
 
 
@@ -164,7 +194,7 @@ class Paginator
 	 * Sets the total number of items.
 	 * @return static
 	 */
-	public function setItemCount(int $itemCount = null)
+	public function setItemCount(?int $itemCount = null)
 	{
 		$this->itemCount = $itemCount === null ? null : max(0, $itemCount);
 		return $this;
